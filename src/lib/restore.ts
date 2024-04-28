@@ -1,10 +1,9 @@
 import { Wallet } from '../providers/wallet'
 import { NewAddress, generateAddress } from './address'
-import { unblindOutput } from './blinder'
 import { prettyUnixTimestamp } from './format'
 import { Transaction, Utxo } from './types'
-import * as liquid from 'liquidjs-lib'
 import { ChainSource, ElectrumBlockHeader, ElectrumHistory, ElectrumTransaction } from './chainsource'
+import { Transaction as BtcTransaction } from 'bitcoinjs-lib'
 
 const cached = {
   blockHeaders: <ElectrumBlockHeader[]>[],
@@ -40,18 +39,19 @@ const getTransaction = async (txid: string, chainSource: ChainSource): Promise<s
 
 const getOutputAmount = async (address: NewAddress, txHex: string, chainSource: ChainSource) => {
   let amount = 0
-  const tx = liquid.Transaction.fromHex(txHex)
+  const tx = BtcTransaction.fromHex(txHex)
   for (const vin of tx.ins) {
     const witnessPubkey = vin.witness[1] ? vin.witness[1].toString('hex') : undefined
     if (witnessPubkey === address.pubkey.toString('hex')) {
       const hex = await getTransaction(vin.hash.reverse().toString('hex'), chainSource)
-      const { value } = await unblindOutput(vin.index, hex, address.blindingKeys)
+      const tx = BtcTransaction.fromHex(hex)
+      const value = tx.outs[vin.index].value
       amount -= Number(value)
     }
   }
   for (const [idx, vout] of tx.outs.entries()) {
     if (vout.script.toString('hex') === address.script.toString('hex')) {
-      const { value } = await unblindOutput(idx, txHex, address.blindingKeys)
+      const value = tx.outs[idx].value
       amount += Number(value)
     }
   }
@@ -73,7 +73,7 @@ export const getHistories = async (chainSource: ChainSource, wallet: Wallet) => 
   while (emptyAddrInARow < gapLimit) {
     // generate address
     const address = await generateAddress(wallet, index)
-    if (!address.address || !address.blindingKeys) throw new Error('Could not generate new address')
+    if (!address.address) throw new Error('Could not generate new address')
     // get address history
     const history = await chainSource.fetchHistories([address.script])
     // push to return object
@@ -123,18 +123,17 @@ export const restore = async (chainSource: ChainSource, histories: History[], up
         console.warn('Unknown txHex for txid', u.txid)
         continue
       }
-      const unblinded = await unblindOutput(u.vout, txHex, address.blindingKeys)
+
+      const tx = BtcTransaction.fromHex(txHex)
+      const value = tx.outs[u.vout].value
+
       utxos.push({
         ...u,
-        ...unblinded,
         address: address.address,
-        asset: unblinded.asset.reverse().toString('hex'),
-        blindingPublicKey: address.blindingKeys.publicKey,
-        blindingPrivateKey: address.blindingKeys.privateKey,
         nextIndex: address.nextIndex,
         pubkey: address.pubkey,
         script: address.script,
-        value: Number(unblinded.value),
+        value: Number(value),
       })
     }
 

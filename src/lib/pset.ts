@@ -1,53 +1,36 @@
-import { networks, Creator, Updater, Transaction, address } from 'liquidjs-lib'
+import { Psbt, Transaction, address } from 'bitcoinjs-lib'
 import { Wallet } from '../providers/wallet'
 import { generateAddress } from './address'
 import { Utxo } from './types'
 import { CoinsSelected } from './coinSelection'
+import { getNetwork } from './network'
 
 export const buildPset = async (coinSelection: CoinsSelected, destinationAddress: string, wallet: Wallet) => {
-  const network = networks[wallet.network]
-  const { amount, changeAmount, coins, txfee } = coinSelection
+  const network = getNetwork(wallet.network)
+  const { amount, changeAmount, coins } = coinSelection
 
-  const pset = Creator.newPset()
-  const updater = new Updater(pset)
-
-  updater
-    .addInputs(
-      coins.map((coin: Utxo) => ({
-        txid: coin.txid,
-        txIndex: coin.vout,
-        witnessUtxo: coin.prevout,
-        sighashType: Transaction.SIGHASH_ALL,
-      })),
-    )
-    .addOutputs([
-      // send to boltz
-      {
-        amount,
-        asset: network.assetHash,
-        script: address.toOutputScript(destinationAddress, network),
-        blindingPublicKey: address.fromConfidential(destinationAddress).blindingKey,
-        blinderIndex: 0,
-      },
-      // network fees
-      {
-        amount: txfee,
-        asset: network.assetHash,
-      },
-    ])
+  const outputs = [
+    {
+      address: destinationAddress,
+      value: amount,
+    },
+  ]
 
   if (changeAmount) {
     const changeAddress = await generateAddress(wallet)
-    updater.addOutputs([
-      {
-        amount: changeAmount,
-        asset: network.assetHash,
-        script: changeAddress.script,
-        blinderIndex: 0,
-        blindingPublicKey: changeAddress.blindingKeys.publicKey,
-      },
-    ])
+    outputs.push({
+      address: address.fromOutputScript(changeAddress.script, network),
+      value: changeAmount,
+    })
   }
 
-  return pset
+  return new Psbt({ network })
+    .addInputs(
+      coins.map((coin: Utxo) => ({
+        hash: coin.txid,
+        index: coin.vout,
+        sighashType: Transaction.SIGHASH_ALL,
+      })),
+    )
+    .addOutputs(outputs)
 }

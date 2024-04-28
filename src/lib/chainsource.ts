@@ -1,5 +1,5 @@
 import { ElectrumWS } from 'ws-electrumx-client'
-import { address, crypto } from 'liquidjs-lib'
+import { address, crypto } from 'bitcoinjs-lib'
 import { NetworkName } from './network'
 import { MVUtxo } from './types'
 import { ExplorerName, getWebSocketExplorerURL } from './explorers'

@@ -15,7 +15,7 @@ export interface ExplorerURLs {
 
 export interface Explorer {
   name: ExplorerName
-  [NetworkName.Liquid]?: ExplorerURLs
+  [NetworkName.Mainnet]?: ExplorerURLs
   [NetworkName.Testnet]?: ExplorerURLs
   [NetworkName.Regtest]?: ExplorerURLs
 }
@@ -23,7 +23,7 @@ export interface Explorer {
 const explorers: Explorer[] = [
   {
     name: ExplorerName.Blockstream,
-    [NetworkName.Liquid]: {
+    [NetworkName.Mainnet]: {
       restApiExplorerURL: 'https://blockstream.info/liquid',
       webSocketExplorerURL: 'wss://esplora.blockstream.com/liquid/electrum-websocket/api',
     },
@@ -34,7 +34,7 @@ const explorers: Explorer[] = [
   },
   {
     name: ExplorerName.Mempool,
-    [NetworkName.Liquid]: {
+    [NetworkName.Mainnet]: {
       restApiExplorerURL: 'https://liquid.network',
       webSocketExplorerURL: 'wss://esplora.blockstream.com/liquid/electrum-websocket/api',
     },

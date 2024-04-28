@@ -1,19 +1,15 @@
 import { mnemonicToSeed } from 'bip39'
 import BIP32Factory from 'bip32'
 import { Mnemonic, Satoshis, Utxo, XPubs } from './types'
-import { NetworkName } from './network'
+import { NetworkName, getNetwork } from './network'
 import { ECPairFactory, ECPairInterface } from 'ecpair'
 import * as ecc from '@bitcoinerlab/secp256k1'
 import { Wallet } from '../providers/wallet'
-import * as liquid from 'liquidjs-lib'
-import { SLIP77Factory } from 'slip77'
-import { BlindingKeyPair } from './blinder'
 
 const bip32 = BIP32Factory(ecc)
-const slip77 = SLIP77Factory(ecc)
 
 const derivationPath = {
-  [NetworkName.Liquid]: "m/84'/1776'/0'",
+  [NetworkName.Mainnet]: "m/84'/1776'/0'",
   [NetworkName.Regtest]: "m/84'/1'/0'",
   [NetworkName.Testnet]: "m/84'/1'/0'",
 }
@@ -38,7 +34,7 @@ export const getCoinKeys = async (coin: Utxo, wallet: Wallet): Promise<ECPairInt
 }
 
 export const generateRandomKeys = (net: NetworkName): ECPairInterface => {
-  const network = liquid.networks[net]
+  const network = getNetwork(net)
   return ECPairFactory(ecc).makeRandom({ network })
 }
 
@@ -46,30 +42,16 @@ const getXpub = (seed: Buffer, network: NetworkName) => {
   return bip32.fromSeed(seed).derivePath(derivationPath[network]).neutered().toBase58()
 }
 
-export const getMasterKeys = async (mnemonic: Mnemonic): Promise<{ masterBlindingKey: string; xpubs: XPubs }> => {
-  const slip77 = SLIP77Factory(ecc)
+export const getMasterKeys = async (mnemonic: Mnemonic): Promise<{ xpubs: XPubs }> => {
   const seed = await mnemonicToSeed(mnemonic)
   if (!seed) throw new Error('Could not get seed from mnemonic')
-  const masterBlindingKey = slip77.fromSeed(seed.toString('hex')).masterKey.toString('hex')
-  if (!masterBlindingKey) throw new Error('Could not get masterBlindingKey')
   return {
-    masterBlindingKey,
     xpubs: {
-      [NetworkName.Liquid]: getXpub(seed, NetworkName.Liquid),
+      [NetworkName.Mainnet]: getXpub(seed, NetworkName.Mainnet),
       [NetworkName.Regtest]: getXpub(seed, NetworkName.Regtest),
       [NetworkName.Testnet]: getXpub(seed, NetworkName.Testnet),
     },
   }
-}
-
-export const deriveBlindingKeys = async (script: Buffer, wallet: Wallet): Promise<BlindingKeyPair> => {
-  const { masterBlindingKey } = wallet
-  if (!masterBlindingKey) throw new Error('Could not get masterBlindingKey')
-  const blindingKeyNode = slip77.fromMasterBlindingKey(masterBlindingKey)
-  if (!blindingKeyNode) throw new Error('No blinding key node, Account cannot derive blinding key')
-  const { publicKey, privateKey } = blindingKeyNode.derive(script)
-  if (!publicKey || !privateKey) throw new Error('Could not derive blinding keys')
-  return { publicKey, privateKey }
 }
 
 export const getBalance = (wallet: Wallet): Satoshis => {

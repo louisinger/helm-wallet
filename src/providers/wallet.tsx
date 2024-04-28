@@ -32,22 +32,22 @@ const defaultWallet: Wallet = {
   mnemonic: '',
   network: defaultNetwork,
   nextIndex: {
-    [NetworkName.Liquid]: 0,
+    [NetworkName.Mainnet]: 0,
     [NetworkName.Regtest]: 0,
     [NetworkName.Testnet]: 0,
   },
   transactions: {
-    [NetworkName.Liquid]: [],
+    [NetworkName.Mainnet]: [],
     [NetworkName.Regtest]: [],
     [NetworkName.Testnet]: [],
   },
   utxos: {
-    [NetworkName.Liquid]: [],
+    [NetworkName.Mainnet]: [],
     [NetworkName.Regtest]: [],
     [NetworkName.Testnet]: [],
   },
   xpubs: {
-    [NetworkName.Liquid]: '',
+    [NetworkName.Mainnet]: '',
     [NetworkName.Regtest]: '',
     [NetworkName.Testnet]: '',
   },

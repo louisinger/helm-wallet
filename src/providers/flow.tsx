@@ -1,8 +1,5 @@
 import { ReactNode, createContext, useState } from 'react'
-import { Invoice } from '../lib/lightning'
 import { ECPairInterface } from 'ecpair'
-import { SubmarineSwapResponse } from '../lib/submarineSwap'
-import { ReverseSwapResponse } from '../lib/reverseSwap'
 
 export interface InitInfo {
   mnemonic: string
@@ -10,28 +7,17 @@ export interface InitInfo {
 
 export interface RecvInfo {
   amount: number
-  swapResponse?: ReverseSwapResponse
   txid?: string
 }
 
-export type SendInfoLightning = Invoice & {
-  lnurl?: string
-  keys?: ECPairInterface
-  swapResponse?: SubmarineSwapResponse
-  total?: number
-  txFees?: number
-  txid?: string
-}
-
-export type SendInfoLiquid = {
+export type SendInfo = {
   address?: string
   keys?: ECPairInterface
   total?: number
+  satoshis?: number
   txFees?: number
   txid?: string
 }
-
-export type SendInfo = SendInfoLightning & SendInfoLiquid
 
 interface FlowContextProps {
   initInfo: InitInfo
@@ -46,21 +32,10 @@ export const emptyInitInfo: InitInfo = {
   mnemonic: '',
 }
 
-export const emptyRecvInfo: RecvInfo = {
-  amount: 0,
-}
-
-export const emptySendInfo: SendInfo = {
-  invoice: '',
-  note: '',
-  paymentHash: '',
-  satoshis: 0,
-}
-
 export const FlowContext = createContext<FlowContextProps>({
   initInfo: emptyInitInfo,
-  recvInfo: emptyRecvInfo,
-  sendInfo: emptySendInfo,
+  recvInfo: { amount: 0 },
+  sendInfo: {},
   setInitInfo: () => {},
   setRecvInfo: () => {},
   setSendInfo: () => {},
@@ -68,8 +43,8 @@ export const FlowContext = createContext<FlowContextProps>({
 
 export const FlowProvider = ({ children }: { children: ReactNode }) => {
   const [initInfo, setInitInfo] = useState(emptyInitInfo)
-  const [recvInfo, setRecvInfo] = useState(emptyRecvInfo)
-  const [sendInfo, setSendInfo] = useState(emptySendInfo)
+  const [recvInfo, setRecvInfo] = useState({ amount: 0 } as RecvInfo)
+  const [sendInfo, setSendInfo] = useState({} as SendInfo)
 
   return (
     <FlowContext.Provider value={{ initInfo, recvInfo, sendInfo, setInitInfo, setRecvInfo, setSendInfo }}>

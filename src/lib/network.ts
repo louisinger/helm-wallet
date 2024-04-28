@@ -1,15 +1,14 @@
-import { Network } from 'liquidjs-lib/src/networks'
-import * as liquid from 'liquidjs-lib'
+import { Network, networks } from 'bitcoinjs-lib'
 
 export enum NetworkName {
-  Liquid = 'liquid',
+  Mainnet = 'mainnet',
   Testnet = 'testnet',
   Regtest = 'regtest',
 }
 
 export const getNetworkNames = (): [NetworkName, string][] => {
   return [
-    [NetworkName.Liquid, 'Liquid'],
+    [NetworkName.Mainnet, 'Mainnet'],
     [NetworkName.Testnet, 'Testnet'],
     [NetworkName.Regtest, 'Regtest'],
   ]
@@ -17,8 +16,8 @@ export const getNetworkNames = (): [NetworkName, string][] => {
 
 export const getNetwork = (network: NetworkName): Network => {
   const net = network.toLowerCase()
-  if (net === 'liquid') return liquid.networks.liquid
-  if (net === 'testnet') return liquid.networks.testnet
-  if (net === 'regtest') return liquid.networks.regtest
+  if (net === 'mainnet') return networks.bitcoin
+  if (net === 'testnet') return networks.testnet
+  if (net === 'regtest') return networks.regtest
   throw new Error(`Invalid network ${network}`)
 }

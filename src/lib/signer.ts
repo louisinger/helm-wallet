@@ -1,30 +1,18 @@
-import zkpInit, { Secp256k1ZKP } from '@vulpemventures/secp256k1-zkp'
-import { Pset, Signer, Transaction, script } from 'liquidjs-lib'
+import { Psbt } from 'bitcoinjs-lib'
 import { getCoinKeys } from './wallet'
 import { Wallet } from '../providers/wallet'
 import { Utxo } from './types'
 
-let zkp: Secp256k1ZKP
 
-export const signPset = async (pset: Pset, coins: Utxo[], wallet: Wallet) => {
-  if (!zkp) zkp = await zkpInit()
-  const signer = new Signer(pset)
-
-  for (const [index] of signer.pset.inputs.entries()) {
+export const signPset = async (partial: Psbt, coins: Utxo[], wallet: Wallet) => {
+  for (const [index] of partial.data.inputs.entries()) {
     const keys = await getCoinKeys(coins[index], wallet)
-    const sighash = Transaction.SIGHASH_ALL
-    const signature = keys.sign(pset.getInputPreimage(index, sighash))
-    signer.addSignature(
-      index,
-      {
-        partialSig: {
-          pubkey: coins[index].pubkey,
-          signature: script.signature.encode(signature, sighash),
-        },
-      },
-      Pset.ECDSASigValidator(zkp.ecc),
-    )
+
+    console.log('keys', keys)
+    // const sighash = Transaction.SIGHASH_ALL
+    // TODO
+    throw new Error('Could not sign pset')
   }
 
-  return signer.pset
+  return partial
 }

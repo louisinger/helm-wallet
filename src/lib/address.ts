@@ -1,17 +1,13 @@
+import * as ecc from '@bitcoinerlab/secp256k1'
+import { payments } from 'bitcoinjs-lib'
 import BIP32Factory from 'bip32'
 import { getNetwork } from './network'
-import * as ecc from '@bitcoinerlab/secp256k1'
-import * as liquid from 'liquidjs-lib'
-import { BlindingKeyPair } from './blinder'
 import { Wallet } from '../providers/wallet'
-import { deriveBlindingKeys } from './wallet'
 
 const bip32 = BIP32Factory(ecc)
 
 export interface NewAddress {
   address: string
-  blindingKeys: BlindingKeyPair
-  confidentialAddress: string
   nextIndex: number
   pubkey: Buffer
   script: Buffer
@@ -23,11 +19,8 @@ export const generateAddress = async (wallet: Wallet, index?: number): Promise<N
   const network = getNetwork(wallet.network)
   const nextIndex = index ?? wallet.nextIndex[wallet.network]
   const pubkey = bip32.fromBase58(xpub).derive(chain).derive(nextIndex).publicKey
-  const { address, output } = liquid.payments.p2wpkh({ network, pubkey })
-  if (!address || !output) throw new Error('Unable to generate liquid payment')
-  const script = output
-  const unconfidentialAddress = liquid.address.fromOutputScript(script, network)
-  const blindingKeys = await deriveBlindingKeys(script, wallet)
-  const confidentialAddress = liquid.address.toConfidential(unconfidentialAddress, blindingKeys.publicKey)
-  return { address, blindingKeys, confidentialAddress, nextIndex, pubkey, script }
+  const { address, output: script } = payments.p2wpkh({ network, pubkey })
+  if (!address) throw new Error('Could not generate address')
+  if (!script) throw new Error('Could not generate script')
+  return { address, nextIndex, pubkey, script }
 }

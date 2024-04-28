@@ -2,14 +2,13 @@ import { useContext, useEffect, useState } from 'react'
 import Button from '../../../components/Button'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import { NavigationContext, Pages } from '../../../providers/navigation'
-import { FlowContext, emptySendInfo } from '../../../providers/flow'
+import { FlowContext } from '../../../providers/flow'
 import Content from '../../../components/Content'
 import Title from '../../../components/Title'
 import Container from '../../../components/Container'
 import NeedsPassword from '../../../components/NeedsPassword'
 import { prettyNumber } from '../../../lib/format'
 import { WalletContext } from '../../../providers/wallet'
-import { finalizeSubmarineSwap } from '../../../lib/submarineSwap'
 import { inOneMinute, someSeconds } from '../../../lib/constants'
 import { sendSats } from '../../../lib/transactions'
 import Error from '../../../components/Error'
@@ -22,8 +21,8 @@ export default function SendPayment() {
 
   const [error, setError] = useState('')
 
-  const { invoice, keys, total } = sendInfo
-  if (invoice && !keys) return <Error error text='Missing keys' />
+  const { keys, total } = sendInfo
+  if (!keys) return <Error error text='Missing keys' />
 
   const onTxid = (txid: string) => {
     if (!txid) return setError('Error broadcasting transaction')
@@ -35,7 +34,7 @@ export default function SendPayment() {
   }
 
   const goBackToWallet = () => {
-    setSendInfo(emptySendInfo)
+    setSendInfo({})
     navigate(Pages.Wallet)
   }
 
@@ -43,8 +42,6 @@ export default function SendPayment() {
     if (wallet.mnemonic) {
       if (sendInfo.address && sendInfo.total) {
         sendSats(sendInfo.total, sendInfo.address, wallet).then((txid) => onTxid(txid))
-      } else if (sendInfo.invoice) {
-        finalizeSubmarineSwap(sendInfo, wallet, onTxid)
       }
     }
   }, [wallet.mnemonic])

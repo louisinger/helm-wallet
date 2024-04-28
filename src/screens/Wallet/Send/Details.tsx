@@ -25,8 +25,8 @@ export default function SendDetails() {
   const { address, invoice, satoshis } = sendInfo
 
   const wrongNetwork = (invoice: string) =>
-    (/^lnbc/.test(invoice) && wallet.network !== NetworkName.Liquid) ||
-    (!/^lnbc/.test(invoice) && wallet.network === NetworkName.Liquid)
+    (/^lnbc/.test(invoice) && wallet.network !== NetworkName.Mainnet) ||
+    (!/^lnbc/.test(invoice) && wallet.network === NetworkName.Mainnet)
 
   useEffect(() => {
     if (!address && !invoice) return setError('Missing invoice')

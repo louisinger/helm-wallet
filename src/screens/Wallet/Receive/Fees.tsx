@@ -5,7 +5,7 @@ import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import { NavigationContext, Pages } from '../../../providers/navigation'
 import Content from '../../../components/Content'
 import Container from '../../../components/Container'
-import { FlowContext, emptyRecvInfo } from '../../../providers/flow'
+import { FlowContext } from '../../../providers/flow'
 import { prettyNumber } from '../../../lib/format'
 import Table from '../../../components/Table'
 import { BoltzContext } from '../../../providers/boltz'
@@ -16,7 +16,7 @@ export default function ReceiveFees() {
   const { recvInfo, setRecvInfo } = useContext(FlowContext)
 
   const handleCancel = () => {
-    setRecvInfo(emptyRecvInfo)
+    setRecvInfo({ amount: 0 })
     navigate(Pages.Wallet)
   }
 
