@@ -5,6 +5,7 @@ import { ConfigContext } from '../providers/config'
 import { NavigationContext, Pages } from '../providers/navigation'
 import { WalletContext } from '../providers/wallet'
 import { NetworkName } from '../lib/network'
+import { isInitialized } from '../lib/wallet'
 
 const Testnet = () => (
   <div className='flex items-center'>
@@ -19,7 +20,7 @@ export default function Header() {
   const { navigate } = useContext(NavigationContext)
   const { reloading, wallet } = useContext(WalletContext)
 
-  const handleClick = () => navigate(wallet.initialized ? Pages.Wallet : Pages.Init)
+  const handleClick = () => navigate(isInitialized(wallet) ? Pages.Wallet : Pages.Init)
 
   return (
     <header className='flex justify-between w-full mb-3 sm:mb-10'>

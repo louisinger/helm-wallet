@@ -5,5 +5,5 @@ interface ButtonsOnBottomProps {
 }
 
 export default function ButtonsOnBottom({ children }: ButtonsOnBottomProps) {
-  return <div className='flex flex-col gap-2 w-full'>{children}</div>
+  return <div className='flex flex-col gap-2 w-full mt-1'>{children}</div>
 }

@@ -1,6 +1,5 @@
 import { Wallet } from '../providers/wallet'
 import { NetworkName } from './network'
-import { BlindedUtxo } from './types'
 
 export enum ExplorerName {
   Blockstream = 'Blockstream',
@@ -24,12 +23,12 @@ const explorers: Explorer[] = [
   {
     name: ExplorerName.Blockstream,
     [NetworkName.Mainnet]: {
-      restApiExplorerURL: 'https://blockstream.info/liquid',
-      webSocketExplorerURL: 'wss://esplora.blockstream.com/liquid/electrum-websocket/api',
+      restApiExplorerURL: 'https://blockstream.info/',
+      webSocketExplorerURL: 'wss://esplora.blockstream.com/electrum-websocket/api',
     },
     [NetworkName.Testnet]: {
-      restApiExplorerURL: 'https://blockstream.info/liquidtestnet',
-      webSocketExplorerURL: 'wss://esplora.blockstream.com/liquidtestnet/electrum-websocket/api',
+      restApiExplorerURL: 'https://blockstream.info/',
+      webSocketExplorerURL: 'wss://esplora.blockstream.com/electrum-websocket/api',
     },
   },
   {
@@ -113,19 +112,6 @@ export interface AddressTxInfo {
     block_hash: string
     block_time: number
   }
-}
-
-export const fetchAddressTxs = async (address: string, wallet: Wallet): Promise<AddressTxInfo[]> => {
-  const explorerURL = getRestApiExplorerURL(wallet)
-  const url = `${explorerURL}/api/address/${address}/txs`
-  const response = await fetch(url)
-  return await response.json()
-}
-
-export const fetchAddressUtxos = async (address: string, wallet: Wallet): Promise<BlindedUtxo[]> => {
-  const url = `${getRestApiExplorerURL(wallet)}/api/address/${address}/utxo`
-  const response = await fetch(url)
-  return await response.json()
 }
 
 export const fetchTxHex = async (txid: string, wallet: Wallet): Promise<string> => {

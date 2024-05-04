@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react'
 import Button from '../../../components/Button'
 import { NavigationContext, Pages } from '../../../providers/navigation'
-import { FlowContext, emptySendInfo } from '../../../providers/flow'
+import { FlowContext } from '../../../providers/flow'
 import Content from '../../../components/Content'
 import Title from '../../../components/Title'
 import Container from '../../../components/Container'
@@ -9,10 +9,7 @@ import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import PaymentDetails, { PaymentDetailsProps } from '../../../components/PaymentDetails'
 import { getBalance } from '../../../lib/wallet'
 import { WalletContext } from '../../../providers/wallet'
-import { decodeInvoice } from '../../../lib/lightning'
 import Error from '../../../components/Error'
-import { NetworkName } from '../../../lib/network'
-import { extractError } from '../../../lib/error'
 
 export default function SendDetails() {
   const { navigate } = useContext(NavigationContext)
@@ -22,42 +19,22 @@ export default function SendDetails() {
   const [details, setDetails] = useState<PaymentDetailsProps>()
   const [error, setError] = useState('')
 
-  const { address, invoice, satoshis } = sendInfo
-
-  const wrongNetwork = (invoice: string) =>
-    (/^lnbc/.test(invoice) && wallet.network !== NetworkName.Mainnet) ||
-    (!/^lnbc/.test(invoice) && wallet.network === NetworkName.Mainnet)
+  const { address, satoshis } = sendInfo
 
   useEffect(() => {
-    if (!address && !invoice) return setError('Missing invoice')
+    if (!address) return setError('Missing address')
     if (address && satoshis) {
       return setDetails({
         address,
         satoshis,
       })
     }
-    if (invoice) {
-      if (wrongNetwork(invoice)) {
-        return setError('Invoice received is for a different network. Change network on Settings and try again.')
-      }
-      try {
-        const { note, satoshis } = decodeInvoice(sendInfo.invoice ?? '')
-        if (!satoshis) return setError('Error decoding invoice')
-        return setDetails({
-          invoice,
-          note,
-          satoshis,
-        })
-      } catch (err) {
-        setError(extractError(err))
-      }
-    }
-  }, [sendInfo.invoice])
+  }, [sendInfo])
 
   const handleContinue = () => navigate(Pages.SendFees)
 
   const handleCancel = () => {
-    setSendInfo(emptySendInfo)
+    setSendInfo({})
     navigate(Pages.Wallet)
   }
 

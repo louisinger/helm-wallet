@@ -1,19 +1,18 @@
-import { formatInvoice } from '../lib/format'
 import QRCode from 'react-qr-code'
 
 interface QrCodeProps {
   value: string
+  onClick?: () => void
 }
 
-export default function QrCode({ value }: QrCodeProps) {
+export default function QrCode({ value, onClick }: QrCodeProps) {
   return (
-    <div className='w-[300px] mx-auto select-none'>
+    <div className='max-w-[90vw] max-h-[60vh] mx-auto select-none'>
       {value ? (
-        <div className='bg-white p-[10px]'>
-          <QRCode size={280} value={value} fgColor='#000000' />
+        <div onClick={onClick} className='bg-white p-[10px]'>
+          <QRCode value={value} fgColor='#000000' />
         </div>
       ) : null}
-      <p className='mt-4'>{formatInvoice(value)}</p>
     </div>
   )
 }

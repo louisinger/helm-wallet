@@ -1,11 +1,9 @@
 import { ReactElement, useContext, useState } from 'react'
-import Logout from './Logout'
 import Explorer from './Explorer'
 import Network from './Network'
 import Header from './Header'
 import Footer from '../../components/Footer'
 import ExplorerIcon from '../../icons/Explorer'
-import LogoutIcon from '../../icons/Logout'
 import NetworkIcon from '../../icons/Network'
 import ArrowIcon from '../../icons/Arrow'
 import NotificationIcon from '../../icons/Notification'
@@ -24,13 +22,13 @@ import InfoIcon from '../../icons/Info'
 import About from './About'
 import DarkThemeIcon from '../../icons/DarkTheme'
 import Theme from './Theme'
+import { isInitialized } from '../../lib/wallet'
 
 enum Options {
   Menu = 'menu',
   About = 'about',
   Backup = 'backup',
   Explorer = 'explorer',
-  Logout = 'logout',
   Network = 'network',
   Notifications = 'notifications',
   Password = 'password',
@@ -65,10 +63,6 @@ export default function Settings() {
       option: Options.Explorer,
     },
     {
-      icon: <LogoutIcon />,
-      option: Options.Logout,
-    },
-    {
       icon: <NetworkIcon />,
       option: Options.Network,
     },
@@ -95,8 +89,8 @@ export default function Settings() {
   ]
 
   const validOptions = (): Option[] => {
-    if (wallet.initialized) return options
-    const hiddenOptions = [Options.Backup, Options.Logout, Options.Password, Options.Reload, Options.Reset]
+    if (isInitialized(wallet)) return options
+    const hiddenOptions = [Options.Backup, Options.Password, Options.Reload, Options.Reset]
     return options.filter((o) => !hiddenOptions.includes(o.option))
   }
 
@@ -126,7 +120,6 @@ export default function Settings() {
         {option === Options.About && <About />}
         {option === Options.Backup && <Backup />}
         {option === Options.Explorer && <Explorer />}
-        {option === Options.Logout && <Logout />}
         {option === Options.Network && <Network />}
         {option === Options.Notifications && <Notifications />}
         {option === Options.Password && <Password />}

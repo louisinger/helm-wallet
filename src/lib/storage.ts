@@ -17,7 +17,6 @@ export const readConfigFromStorage = (): Config | undefined => {
 }
 
 export const saveWalletToStorage = (wallet: Wallet): void => {
-  if (wallet.mnemonic) wallet.mnemonic = ''
   localStorage.setItem('wallet', JSON.stringify(wallet))
 }
 

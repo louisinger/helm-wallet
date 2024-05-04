@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useState } from 'react'
 import Button from '../../../components/Button'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import { NavigationContext, Pages } from '../../../providers/navigation'
@@ -17,16 +17,14 @@ import Loading from '../../../components/Loading'
 export default function SendPayment() {
   const { navigate } = useContext(NavigationContext)
   const { sendInfo, setSendInfo } = useContext(FlowContext)
-  const { increaseIndex, reloadWallet, setMnemonic, wallet } = useContext(WalletContext)
+  const { reloadWallet, wallet } = useContext(WalletContext)
 
   const [error, setError] = useState('')
 
-  const { keys, total } = sendInfo
-  if (!keys) return <Error error text='Missing keys' />
+  const { total } = sendInfo
 
   const onTxid = (txid: string) => {
     if (!txid) return setError('Error broadcasting transaction')
-    increaseIndex()
     setSendInfo({ ...sendInfo, txid })
     setTimeout(reloadWallet, someSeconds)
     setTimeout(reloadWallet, inOneMinute)
@@ -38,24 +36,24 @@ export default function SendPayment() {
     navigate(Pages.Wallet)
   }
 
-  useEffect(() => {
-    if (wallet.mnemonic) {
-      if (sendInfo.address && sendInfo.total) {
-        sendSats(sendInfo.total, sendInfo.address, wallet).then((txid) => onTxid(txid))
-      }
+  const onMnemonic = (mnemonic: string) => {
+    if (!mnemonic) return
+
+    if (sendInfo.address && sendInfo.total && sendInfo.txFees) {
+      sendSats(sendInfo.total, sendInfo.address, sendInfo.txFees, wallet, mnemonic).then((txid) => onTxid(txid))
     }
-  }, [wallet.mnemonic])
+  }
 
   return (
     <Container>
       <Content>
         <Title text='Pay' subtext={`Paying ${prettyNumber(total ?? 0)} sats`} />
-        {error ? <Error error={Boolean(error)} text={error} /> : wallet.mnemonic ? <Loading /> : null}
+        {error ? <Error error={Boolean(error)} text={error} /> : <Loading />}
       </Content>
       <ButtonsOnBottom>
         <Button onClick={goBackToWallet} label='Back to wallet' secondary />
       </ButtonsOnBottom>
-      {wallet.mnemonic ? '' : <NeedsPassword onClose={goBackToWallet} onMnemonic={setMnemonic} />}
+      <NeedsPassword onClose={goBackToWallet} onMnemonic={onMnemonic} />
     </Container>
   )
 }

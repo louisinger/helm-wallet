@@ -5,20 +5,16 @@ import Header from './components/Header'
 import Footer from './components/Footer'
 import Settings from './screens/Settings/Index'
 import Loading from './components/Loading'
-import SendInvoice from './screens/Wallet/Send/Invoice'
 import SendDetails from './screens/Wallet/Send/Details'
 import SendPayment from './screens/Wallet/Send/Pay'
-import ReceiveAmount from './screens/Wallet/Receive/Amount'
-import ReceiveInvoice from './screens/Wallet/Receive/Invoice'
 import InitNew from './screens/Init/New'
 import InitOld from './screens/Init/Restore'
 import SendFees from './screens/Wallet/Send/Fees'
-import ReceiveSuccess from './screens/Wallet/Receive/Success'
+import ReceiveAddress from './screens/Wallet/Receive/Address'
 import { ConfigContext } from './providers/config'
 import { NavigationContext, Pages } from './providers/navigation'
 import InitPassword from './screens/Init/Password'
 import OuterContainer from './components/OuterContainer'
-import ReceiveFees from './screens/Wallet/Receive/Fees'
 import SendSuccess from './screens/Wallet/Send/Success'
 import Transactions from './screens/Wallet/Transactions'
 import SendAmount from './screens/Wallet/Send/Amount'
@@ -38,12 +34,8 @@ export default function App() {
         {screen === Pages.InitNew && <InitNew />}
         {screen === Pages.InitOld && <InitOld />}
         {screen === Pages.InitPassword && <InitPassword />}
-        {screen === Pages.ReceiveAmount && <ReceiveAmount />}
-        {screen === Pages.ReceiveFees && <ReceiveFees />}
-        {screen === Pages.ReceiveInvoice && <ReceiveInvoice />}
-        {screen === Pages.ReceiveSuccess && <ReceiveSuccess />}
+        {screen === Pages.ReceiveAddress && <ReceiveAddress />}
         {screen === Pages.SendAmount && <SendAmount />}
-        {screen === Pages.SendInvoice && <SendInvoice />}
         {screen === Pages.SendDetails && <SendDetails />}
         {screen === Pages.SendFees && <SendFees />}
         {screen === Pages.SendPayment && <SendPayment />}

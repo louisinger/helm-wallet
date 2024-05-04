@@ -6,23 +6,30 @@ import { FlowContext } from '../../../providers/flow'
 import Title from '../../../components/Title'
 import Content from '../../../components/Content'
 import InputAmount from '../../../components/InputAmount'
-import { BoltzContext } from '../../../providers/boltz'
 import Container from '../../../components/Container'
-import { prettyNumber } from '../../../lib/format'
-
-enum ButtonLabel {
-  Low = 'Amount too low',
-  High = 'Amount too high',
-  Nok = 'Something went wrong',
-  Ok = 'Continue',
-}
+import { WalletContext } from '../../../providers/wallet'
+import { getBalance } from '../../../lib/wallet'
+import InputAddress from '../../../components/InputAddress'
 
 export default function SendAmount() {
+  const { wallet } = useContext(WalletContext)
   const { navigate } = useContext(NavigationContext)
   const { sendInfo, setSendInfo } = useContext(FlowContext)
-  const { limits } = useContext(BoltzContext)
 
   const [amount, setAmount] = useState(0)
+  const [error, setError] = useState('')
+
+  const updateAmount = (value: number) => {
+    setError('')
+    setAmount(value)
+
+    if (value.toString().length <= 0 || value === 0) return
+    const balance = getBalance(wallet)
+    if (value >= balance) {
+      setError('not enough funds')
+      return
+    }
+  }
 
   const handleCancel = () => {
     setSendInfo({})
@@ -37,25 +44,17 @@ export default function SendAmount() {
     }
   }
 
-  const { minimal, maximal } = limits
-  const disabled = amount < minimal || amount > maximal 
-  const label = amount < limits.minimal
-    ? ButtonLabel.Low
-    : amount > limits.maximal
-    ? ButtonLabel.High
-    : ButtonLabel.Ok
-
   return (
     <Container>
       <Content>
-        <Title text='Send' subtext={`Min: ${prettyNumber(minimal)} · Max: ${prettyNumber(maximal)} sats`} />
+        <Title text='Send' />
         <div className='flex flex-col gap-2'>
-          {/* <Error error={Boolean(error)} text={error} /> */}
-          <InputAmount label='Amount' onChange={setAmount} />
+          <InputAddress label='Address' onChange={(address) => setSendInfo({ ...sendInfo, address })} />
+          <InputAmount label='Amount' onChange={updateAmount} />
         </div>
       </Content>
       <ButtonsOnBottom>
-        <Button onClick={handleProceed} label={label} disabled={disabled} />
+        <Button onClick={handleProceed} label={error ? error : 'Proceed'} />
         <Button onClick={handleCancel} label='Cancel' secondary />
       </ButtonsOnBottom>
     </Container>

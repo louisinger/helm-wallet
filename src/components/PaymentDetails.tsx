@@ -1,4 +1,4 @@
-import { formatInvoice, prettyNumber } from '../lib/format'
+import { formatLongString, prettyNumber } from '../lib/format'
 
 export const Item = ({ title, body }: { title: string; body: string }) => {
   return (
@@ -23,8 +23,8 @@ export default function PaymentDetails({ details }: { details?: PaymentDetailsPr
     <div>
       <Item title='Amount' body={`${prettyNumber(satoshis)} sats`} />
       {note ? <Item title='Note' body={note} /> : null}
-      {invoice ? <Item title='Invoice' body={formatInvoice(invoice)} /> : null}
-      {address ? <Item title='Address' body={formatInvoice(address)} /> : null}
+      {invoice ? <Item title='Invoice' body={formatLongString(invoice)} /> : null}
+      {address ? <Item title='Address' body={formatLongString(address)} /> : null}
     </div>
   )
 }

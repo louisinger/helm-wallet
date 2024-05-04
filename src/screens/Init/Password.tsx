@@ -3,7 +3,7 @@ import Button from '../../components/Button'
 import ButtonsOnBottom from '../../components/ButtonsOnBottom'
 import Title from '../../components/Title'
 import { NavigationContext, Pages } from '../../providers/navigation'
-import { getMasterKeys } from '../../lib/wallet'
+import { getKeys } from '../../lib/wallet'
 import { WalletContext } from '../../providers/wallet'
 import Content from '../../components/Content'
 import NewPassword from '../../components/NewPassword'
@@ -13,7 +13,7 @@ import Container from '../../components/Container'
 
 export default function InitPassword() {
   const { navigate } = useContext(NavigationContext)
-  const { restoreWallet, wallet } = useContext(WalletContext)
+  const { reloadWallet, initWallet } = useContext(WalletContext)
   const { initInfo } = useContext(FlowContext)
 
   const [label, setLabel] = useState('')
@@ -24,8 +24,9 @@ export default function InitPassword() {
   const handleProceed = () => {
     const { mnemonic } = initInfo
     saveMnemonicToStorage(mnemonic, password)
-    getMasterKeys(mnemonic).then(({ masterBlindingKey, xpubs }) => {
-      restoreWallet({ ...wallet, masterBlindingKey, xpubs, initialized: true })
+    getKeys(mnemonic).then(({ publicKeys }) => {
+      initWallet(publicKeys)
+      reloadWallet(mnemonic)
       navigate(Pages.Wallet)
     })
   }

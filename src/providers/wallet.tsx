@@ -1,41 +1,30 @@
-import { ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react'
+import { ReactNode, createContext, useContext, useEffect, useState } from 'react'
 import { readWalletFromStorage, saveMnemonicToStorage, saveWalletToStorage } from '../lib/storage'
 import { NavigationContext, Pages } from './navigation'
 import { NetworkName } from '../lib/network'
-import { Mnemonic, NextIndexes, Transactions, Utxos, XPubs } from '../lib/types'
+import { Mnemonic, Transactions, Utxos, PublicKeys } from '../lib/types'
 import { ExplorerName } from '../lib/explorers'
-import { defaultExplorer, defaultGapLimit, defaultNetwork } from '../lib/constants'
-import { ChainSource, WsElectrumChainSource } from '../lib/chainsource'
-import { getHistories, restore } from '../lib/restore'
-
-let chainSource = new WsElectrumChainSource(defaultExplorer, defaultNetwork)
+import { defaultExplorer, defaultNetwork } from '../lib/constants'
+import { getSilentPaymentScanPrivateKey, isInitialized } from '../lib/wallet'
+import { SilentiumAPI } from '../lib/silentpayment/silentium/api'
+import { EsploraChainSource } from '../lib/chainsource'
+import { Updater, applyUpdate } from '../lib/updater'
 
 export interface Wallet {
   explorer: ExplorerName
-  gapLimit: number
-  initialized: boolean
-  lastUpdate: number
-  masterBlindingKey?: string
-  mnemonic: Mnemonic
   network: NetworkName
-  nextIndex: NextIndexes
   transactions: Transactions
   utxos: Utxos
-  xpubs: XPubs
+  publicKeys: PublicKeys
+  walletBirthHeight: number
+  scannedBlockHeight: number
+  silentiumAPI: string
 }
 
 const defaultWallet: Wallet = {
   explorer: defaultExplorer,
-  gapLimit: defaultGapLimit,
-  initialized: false,
-  lastUpdate: 0,
-  mnemonic: '',
   network: defaultNetwork,
-  nextIndex: {
-    [NetworkName.Mainnet]: 0,
-    [NetworkName.Regtest]: 0,
-    [NetworkName.Testnet]: 0,
-  },
+  silentiumAPI: '',
   transactions: {
     [NetworkName.Mainnet]: [],
     [NetworkName.Regtest]: [],
@@ -46,44 +35,34 @@ const defaultWallet: Wallet = {
     [NetworkName.Regtest]: [],
     [NetworkName.Testnet]: [],
   },
-  xpubs: {
-    [NetworkName.Mainnet]: '',
-    [NetworkName.Regtest]: '',
-    [NetworkName.Testnet]: '',
+  publicKeys: {
+    [NetworkName.Mainnet]: { p2trPublicKey: '', scanPublicKey: '', spendPublicKey: '' },
+    [NetworkName.Regtest]: { p2trPublicKey: '', scanPublicKey: '', spendPublicKey: '' },
+    [NetworkName.Testnet]: { p2trPublicKey: '', scanPublicKey: '', spendPublicKey: '' },
   },
+  walletBirthHeight: 0,
+  scannedBlockHeight: 0,
 }
 
 interface WalletContextProps {
-  chainSource: ChainSource
   changeExplorer: (e: ExplorerName) => void
   changeNetwork: (n: NetworkName) => void
   loading: boolean
   reloading: boolean
-  restoring: number
-  increaseIndex: () => void
-  logout: () => void
-  reloadWallet: (w?: Wallet) => void
-  restoreWallet: (w: Wallet) => void
+  reloadWallet: (mnemonic: Mnemonic) => void
   resetWallet: () => void
-  setMnemonic: (m: Mnemonic) => void
-  updateWallet: (w: Wallet) => void
+  initWallet: (publicKeys: PublicKeys) => void
   wallet: Wallet
 }
 
 export const WalletContext = createContext<WalletContextProps>({
-  chainSource,
   changeExplorer: () => {},
   changeNetwork: () => {},
   loading: true,
   reloading: false,
-  restoring: 0,
-  increaseIndex: () => {},
-  logout: () => {},
   reloadWallet: () => {},
-  restoreWallet: () => {},
   resetWallet: () => {},
-  setMnemonic: () => {},
-  updateWallet: () => {},
+  initWallet: () => {},
   wallet: defaultWallet,
 })
 
@@ -92,87 +71,63 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   const [loading, setLoading] = useState(true)
   const [reloading, setReloading] = useState(false)
-  const [restoring, setRestoring] = useState(0)
   const [wallet, setWallet] = useState(defaultWallet)
-
-  const mnemonic = useRef('')
-
-  const setMnemonic = (m: Mnemonic) => {
-    mnemonic.current = m
-    setWallet({ ...wallet, mnemonic: m })
-  }
-
-  const changeChainSource = async (w: Wallet) => {
-    await chainSource.close()
-    chainSource = new WsElectrumChainSource(w.explorer, w.network)
-  }
 
   const changeExplorer = async (explorer: ExplorerName) => {
     const clone = { ...wallet, explorer }
     updateWallet(clone)
-    if (clone.explorer !== chainSource.explorer) await changeChainSource(clone)
-    reloadWallet(clone)
   }
 
   const changeNetwork = async (networkName: NetworkName) => {
     const clone = { ...wallet, network: networkName }
     updateWallet(clone)
-    if (clone.network !== chainSource.network) await changeChainSource(clone)
-    if (wallet.initialized) restoreWallet(clone)
   }
 
-  const increaseIndex = () => {
-    const clone = { ...wallet }
-    const currentValue = clone.nextIndex[wallet.network]
-    clone.nextIndex[wallet.network] = currentValue + 1
-    saveWalletToStorage(clone)
-    setWallet(clone)
-  }
-
-  const logout = () => setMnemonic('')
-
-  const reloadWallet = async (w?: Wallet) => {
-    if (reloading) return
+  const reloadWallet = async (mnemonic: string) => {
+    if (!mnemonic || reloading) return
     setReloading(true)
-    const clone = w ? { ...w } : { ...wallet }
-    // use the next line to use the REST API
-    // const { nextIndex, transactions, utxos } = await fetchHistory(clone)
-    const { histories } = await getHistories(chainSource, clone)
-    const { nextIndex, transactions, utxos } = await restore(chainSource, histories)
-    clone.nextIndex[clone.network] = nextIndex
-    clone.transactions[clone.network] = transactions
-    clone.utxos[clone.network] = utxos
-    clone.lastUpdate = Math.floor(Date.now() / 1000)
-    updateWallet(clone)
+    const silentiumAPI = new SilentiumAPI(wallet.silentiumAPI)
+    const chainTip = await silentiumAPI.getChainTipHeight()
+    if (chainTip < wallet.scannedBlockHeight) {
+      setReloading(false)
+      return
+    }
+
+    const explorer = new EsploraChainSource(wallet.explorer)
+    const scanPrivKey = await getSilentPaymentScanPrivateKey(mnemonic, wallet.network)
+    const spendPubKey = Buffer.from(wallet.publicKeys[wallet.network].spendPublicKey, 'hex')
+    const p2trPubKey = Buffer.from(wallet.publicKeys[wallet.network].p2trPublicKey, 'hex')
+    const p2trScript = Buffer.concat([Buffer.from([0x51, 0x20]), p2trPubKey.slice(1)])
+
+    const updater = new Updater(
+      explorer,
+      silentiumAPI,
+      scanPrivKey,
+      spendPubKey,
+      p2trScript,
+    )
+    
+    for (let i = wallet.scannedBlockHeight+1; i <= chainTip; i++) {
+      const updateResult = await updater.updateHeight(i, wallet.utxos[wallet.network])
+      updateWallet({ ...applyUpdate(wallet, updateResult), scannedBlockHeight: i })
+    }
+
     setReloading(false)
   }
 
-  const restoreWallet = async (w: Wallet) => {
-    if (restoring) return
-    setRestoring(-1)
-    const clone = { ...w }
-    const { histories, numTxs } = await getHistories(chainSource, clone)
-    setRestoring(numTxs)
-    const update = () => setRestoring((r) => r - 1)
-    const { nextIndex, transactions, utxos } = await restore(chainSource, histories, update)
-    clone.nextIndex[clone.network] = nextIndex
-    clone.transactions[clone.network] = transactions
-    clone.utxos[clone.network] = utxos
-    clone.lastUpdate = Math.floor(Date.now() / 1000)
-    updateWallet(clone)
-    setRestoring(0)
-  }
-
   const resetWallet = () => {
-    logout()
     updateWallet(defaultWallet)
     saveMnemonicToStorage('', 'password')
     navigate(Pages.Init)
   }
 
   const updateWallet = (data: Wallet) => {
-    setWallet({ ...data, mnemonic: mnemonic.current })
+    setWallet({ ...data })
     saveWalletToStorage(data)
+  }
+
+  const initWallet = (publicKeys: PublicKeys) => {
+    updateWallet({ ...defaultWallet, publicKeys })
   }
 
   useEffect(() => {
@@ -180,12 +135,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       if (!loading) return
       const wallet = readWalletFromStorage() ?? defaultWallet
       updateWallet(wallet)
-      if (wallet.explorer !== chainSource.explorer || wallet.network !== chainSource.network) {
-        await changeChainSource(wallet)
-      }
-      if (wallet.initialized) reloadWallet(wallet)
       setLoading(false)
-      navigate(wallet.initialized ? Pages.Wallet : Pages.Init)
+      navigate(isInitialized(wallet) ? Pages.Wallet : Pages.Init)
     }
     getWalletFromStorage()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -194,20 +145,14 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   return (
     <WalletContext.Provider
       value={{
-        chainSource,
         changeExplorer,
         changeNetwork,
         loading,
         reloading,
-        restoring,
-        increaseIndex,
-        logout,
         reloadWallet,
-        restoreWallet,
         resetWallet,
-        setMnemonic,
-        updateWallet,
         wallet,
+        initWallet,
       }}
     >
       {children}

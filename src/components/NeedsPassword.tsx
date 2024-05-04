@@ -8,7 +8,7 @@ import Error from './Error'
 
 interface NeedsPasswordProps {
   onClose?: () => void
-  onMnemonic: (arg0: string) => void
+  onMnemonic: (mnemonic: string) => void
 }
 
 export default function NeedsPassword({ onClose, onMnemonic }: NeedsPasswordProps) {

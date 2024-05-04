@@ -10,14 +10,11 @@ import { prettyNumber } from '../../../lib/format'
 import { WalletContext } from '../../../providers/wallet'
 import Error from '../../../components/Error'
 import Table from '../../../components/Table'
-import NeedsPassword from '../../../components/NeedsPassword'
-import { ECPairFactory } from 'ecpair'
-import * as ecc from '@bitcoinerlab/secp256k1'
 import { getBalance } from '../../../lib/wallet'
 import { feesToSendSats } from '../../../lib/fees'
 
 export default function SendFees() {
-  const { setMnemonic, wallet } = useContext(WalletContext)
+  const { wallet } = useContext(WalletContext)
   const { navigate } = useContext(NavigationContext)
   const { sendInfo, setSendInfo } = useContext(FlowContext)
   const [error, setError] = useState('')
@@ -25,17 +22,15 @@ export default function SendFees() {
   const { address, total, txFees, satoshis } = sendInfo
   const totalNeeded = (total ?? 0) + (txFees ?? 0)
 
-  const keys = ECPairFactory(ecc).makeRandom()
-
   useEffect(() => {
-    if (wallet.mnemonic && satoshis) {
+    if (satoshis) {
       if (address) {
         const txFees = feesToSendSats(satoshis, wallet)
-        setSendInfo({ ...sendInfo, address, keys, txFees, total: satoshis })
+        setSendInfo({ ...sendInfo, address, txFees, total: satoshis })
         return
       }
     }
-  }, [address, wallet.mnemonic])
+  }, [address])
 
   useEffect(() => {
     if (sendInfo.total) {
@@ -59,8 +54,6 @@ export default function SendFees() {
     ['Transaction fees', prettyNumber(txFees ?? 0)],
     ['Total', prettyTotal],
   ]
-
-  if (!wallet.mnemonic) return <NeedsPassword onMnemonic={setMnemonic} />
 
   return (
     <Container>
