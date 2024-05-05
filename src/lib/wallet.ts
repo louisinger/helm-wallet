@@ -1,9 +1,8 @@
-import * as ecc from 'tiny-secp256k1'
+import ecc from '@bitcoinerlab/secp256k1'
 import { mnemonicToSeed } from 'bip39'
 import BIP32Factory, { BIP32Interface } from 'bip32'
 import { Mnemonic, Satoshis, Utxo, PublicKeys, Keys } from './types'
 import { NetworkName, getNetwork } from './network'
-import { ECPairFactory, ECPairInterface } from 'ecpair'
 import { Wallet } from '../providers/wallet'
 import { deriveBIP352Keys } from './silentpayment/core/keys'
 import { encodeSilentPaymentAddress } from './silentpayment/core/encoding'
@@ -13,7 +12,7 @@ const bip32 = BIP32Factory(ecc)
 
 initEccLib(ecc)
 
-export const getCoinKeys = async (coin: Utxo, network: NetworkName, mnemonic: string): Promise<ECPairInterface> => {
+export async function getCoinPrivKey(coin: Utxo, network: NetworkName, mnemonic: string): Promise<Buffer> {
   const seed = await mnemonicToSeed(mnemonic)
   if (!seed) throw new Error('Could not get seed from mnemonic')
   const masterNode = bip32.fromSeed(seed)
@@ -24,11 +23,11 @@ export const getCoinKeys = async (coin: Utxo, network: NetworkName, mnemonic: st
     if (!privKey) throw new Error('Could not derive private key')
     const tweakedKey = ecc.privateAdd(privKey, coin.silentPayment.tweak)
     if (!tweakedKey) throw new Error('Could not tweak private key')
-    return ECPairFactory(ecc).fromPrivateKey(Buffer.from(tweakedKey))
+    return Buffer.from(tweakedKey)
   }
 
   const { p2trPrivateKey } = getP2TRPrivateKey(masterNode, network)
-  return ECPairFactory(ecc).fromPrivateKey(p2trPrivateKey)
+  return p2trPrivateKey
 }
 
 const getSilentPaymentPublicKeys = (master: BIP32Interface, network: NetworkName): { scanPublicKey: string, spendPublicKey: string } => {

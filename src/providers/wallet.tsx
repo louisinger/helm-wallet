@@ -18,13 +18,13 @@ export interface Wallet {
   publicKeys: PublicKeys
   walletBirthHeight: number
   scannedBlockHeight: number
-  silentiumAPI: string
+  silentiumURL: string
 }
 
 const defaultWallet: Wallet = {
   explorer: defaultExplorer,
   network: defaultNetwork,
-  silentiumAPI: '',
+  silentiumURL: '',
   transactions: {
     [NetworkName.Mainnet]: [],
     [NetworkName.Regtest]: [],
@@ -46,6 +46,7 @@ const defaultWallet: Wallet = {
 
 interface WalletContextProps {
   changeExplorer: (e: ExplorerName) => void
+  changeSilentiumURL: (url: string) => void
   changeNetwork: (n: NetworkName) => void
   loading: boolean
   reloading: boolean
@@ -57,6 +58,7 @@ interface WalletContextProps {
 
 export const WalletContext = createContext<WalletContextProps>({
   changeExplorer: () => {},
+  changeSilentiumURL: () => {},
   changeNetwork: () => {},
   loading: true,
   reloading: false,
@@ -83,10 +85,15 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     updateWallet(clone)
   }
 
+  const changeSilentiumURL = async (url: string) => {
+    const clone = { ...wallet, silentiumURL: url }
+    updateWallet(clone)
+  }
+
   const reloadWallet = async (mnemonic: string) => {
     if (!mnemonic || reloading) return
     setReloading(true)
-    const silentiumAPI = new SilentiumAPI(wallet.silentiumAPI)
+    const silentiumAPI = new SilentiumAPI(wallet.silentiumURL)
     const chainTip = await silentiumAPI.getChainTipHeight()
     if (chainTip < wallet.scannedBlockHeight) {
       setReloading(false)
@@ -146,6 +153,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     <WalletContext.Provider
       value={{
         changeExplorer,
+        changeSilentiumURL,
         changeNetwork,
         loading,
         reloading,

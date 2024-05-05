@@ -5,7 +5,6 @@ import Content from '../../../components/Content'
 import Title from '../../../components/Title'
 import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import Button from '../../../components/Button'
-import QrCode from '../../../components/QrCode'
 import { WalletContext } from '../../../providers/wallet'
 import { getP2TRAddress, getSilentPaymentAddress } from '../../../lib/wallet'
 
@@ -51,9 +50,9 @@ export default function ReceiveSuccess() {
       <Content>
         <Title text='Receive' subtext={addressType()} />
         <div className='flex flex-col h-32 mt-6'>
-          <div className='m-auto' onClick={switchType}>
+          {/* <div className='m-auto' onClick={switchType}>
             <QrCode value={address} />
-          </div>
+          </div> */}
           <p
             className='text-sm text-gray-500 dark:text-gray-400 mt-2'
             style={{ maxWidth: '90vw', wordWrap: 'break-word' }}
@@ -63,6 +62,7 @@ export default function ReceiveSuccess() {
         </div>
       </Content>
       <ButtonsOnBottom>
+        <Button onClick={switchType} label={`Switch to ${type === AddressType.Silent ? 'classic' : 'silent'} address`}/>
         <Button onClick={copyAddress} label={copied ? 'Copied' : 'Copy to clipboard'} />
         <Button onClick={goBackToWallet} label='Back to wallet' secondary />
       </ButtonsOnBottom>

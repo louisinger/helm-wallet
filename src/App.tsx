@@ -2,7 +2,6 @@ import { useContext } from 'react'
 import Init from './screens/Init/Init'
 import Wallet from './screens/Wallet/Index'
 import Header from './components/Header'
-import Footer from './components/Footer'
 import Settings from './screens/Settings/Index'
 import Loading from './components/Loading'
 import SendDetails from './screens/Wallet/Send/Details'
@@ -43,7 +42,6 @@ export default function App() {
         {screen === Pages.Transactions && <Transactions />}
         {screen === Pages.Wallet && <Wallet />}
       </div>
-      <Footer />
     </OuterContainer>
   )
 }

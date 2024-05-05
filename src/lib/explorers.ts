@@ -9,7 +9,6 @@ export enum ExplorerName {
 
 export interface ExplorerURLs {
   restApiExplorerURL: string
-  webSocketExplorerURL: string // ws:// or wss:// endpoint
 }
 
 export interface Explorer {
@@ -23,30 +22,22 @@ const explorers: Explorer[] = [
   {
     name: ExplorerName.Blockstream,
     [NetworkName.Mainnet]: {
-      restApiExplorerURL: 'https://blockstream.info/',
-      webSocketExplorerURL: 'wss://esplora.blockstream.com/electrum-websocket/api',
+      restApiExplorerURL: 'https://blockstream.info/api/',
     },
     [NetworkName.Testnet]: {
-      restApiExplorerURL: 'https://blockstream.info/',
-      webSocketExplorerURL: 'wss://esplora.blockstream.com/electrum-websocket/api',
+      restApiExplorerURL: 'https://blockstream.info/testnet/api/',
     },
   },
   {
     name: ExplorerName.Mempool,
     [NetworkName.Mainnet]: {
-      restApiExplorerURL: 'https://liquid.network',
-      webSocketExplorerURL: 'wss://esplora.blockstream.com/liquid/electrum-websocket/api',
-    },
-    [NetworkName.Testnet]: {
-      restApiExplorerURL: 'https://liquid.network/liquidtestnet',
-      webSocketExplorerURL: 'wss://blockstream.info/liquidtestnet/electrum-websocket/api',
+      restApiExplorerURL: 'https://mempool.space/api/v1/',
     },
   },
   {
     name: ExplorerName.Nigiri,
     [NetworkName.Regtest]: {
-      restApiExplorerURL: 'http://localhost:5001',
-      webSocketExplorerURL: 'ws://127.0.0.1:1234',
+      restApiExplorerURL: 'http://localhost:5000',
     },
   },
 ]
@@ -59,17 +50,9 @@ const getRestApiExplorerURL = ({ explorer, network }: Wallet) => {
   if (exp?.[network]) return exp[network]?.restApiExplorerURL
 }
 
-export const getWebSocketExplorerURL = (explorer: ExplorerName, network: NetworkName): string | undefined => {
-  const exp = explorers.find((e) => e.name === explorer)
-  return exp?.[network]?.webSocketExplorerURL
-}
-
 export const getTxIdURL = (txid: string, wallet: Wallet) => {
   // stupid bug from mempool
-  const url = getRestApiExplorerURL(wallet)?.replace(
-    'https://liquid.network/liquidtestnet',
-    'https://liquid.network/testnet',
-  )
+  const url = getRestApiExplorerURL(wallet)
   return `${url}/tx/${txid}`
 }
 

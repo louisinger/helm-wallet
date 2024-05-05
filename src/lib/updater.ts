@@ -21,12 +21,11 @@ export class Updater {
   ) {}
 
   async updateHeight(height: number, currentUtxos: Utxo[]): Promise<UpdateResult> {
-    const blockHash = await this.chainSource.getBlockHash(height)
-    const blockTimestamp = await this.chainSource.getBlockTime(blockHash)
+    const { filter, blockhash } = await this.silentiumAPI.getBlockFilter(height)
     const blockScalars = await this.silentiumAPI.getBlockScalars(height)
-    const blockFilter = await this.silentiumAPI.getBlockFilter(height)
+    const blockTimestamp = await this.chainSource.getBlockTime(blockhash)
 
-    const basicFilter = new BasicFilter(blockHash, blockFilter)
+    const basicFilter = new BasicFilter(blockhash, filter)
 
     const scriptsInBlock = scan(this.scanPrivateKey, this.spendPublicKey, blockScalars.scalars.map(h2b), basicFilter)
 
@@ -45,7 +44,7 @@ export class Updater {
       }
     }
 
-    const block = await this.chainSource.getBlock(blockHash)
+    const block = await this.chainSource.getBlock(blockhash)
     if (!block.transactions || block.transactions.length === 0) {
       throw new Error('Block has no transactions')
     }

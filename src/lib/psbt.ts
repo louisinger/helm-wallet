@@ -3,7 +3,7 @@ import { Wallet } from '../providers/wallet'
 import { Utxo } from './types'
 import { CoinsSelected } from './coinSelection'
 import { getNetwork } from './network'
-import { getCoinKeys, getSilentPaymentAddress } from './wallet'
+import { getCoinPrivKey, getSilentPaymentAddress } from './wallet'
 import * as silentpay from './silentpayment/core'
 
 export async function buildPsbt(coinSelection: CoinsSelected, fees: number, destinationAddress: string, wallet: Wallet, mnemonic: string) {
@@ -34,7 +34,7 @@ export async function buildPsbt(coinSelection: CoinsSelected, fees: number, dest
   }
 
   const inputPrivKeys: silentpay.PrivateKey[] = await Promise.all(
-    coins.map((coin: Utxo) => getCoinKeys(coin, wallet.network, mnemonic).then((k) => ({ key: k.privateKey!, isXOnly: true }))),
+    coins.map((coin: Utxo) => getCoinPrivKey(coin, wallet.network, mnemonic).then((key) => ({ key, isXOnly: true }))),
   )
 
   const smallestOutpointCoin = coins.reduce((acc, coin) => {

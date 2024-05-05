@@ -2,7 +2,6 @@ import { ReactElement, useContext, useState } from 'react'
 import Explorer from './Explorer'
 import Network from './Network'
 import Header from './Header'
-import Footer from '../../components/Footer'
 import ExplorerIcon from '../../icons/Explorer'
 import NetworkIcon from '../../icons/Network'
 import ArrowIcon from '../../icons/Arrow'
@@ -127,7 +126,6 @@ export default function Settings() {
         {option === Options.Reset && <Reset backup={() => setOption(Options.Backup)} />}
         {option === Options.Theme && <Theme />}
       </div>
-      <Footer />
     </OuterContainer>
   )
 }

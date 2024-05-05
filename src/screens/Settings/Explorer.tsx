@@ -1,4 +1,4 @@
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import Button from '../../components/Button'
 import ButtonsOnBottom from '../../components/ButtonsOnBottom'
 import Title from '../../components/Title'
@@ -8,27 +8,43 @@ import Select from '../../components/Select'
 import Container from '../../components/Container'
 import Content from '../../components/Content'
 import { WalletContext } from '../../providers/wallet'
+import Input from '../../components/Input'
 
 export default function Explorer() {
   const { toggleShowConfig } = useContext(ConfigContext)
-  const { changeExplorer, wallet } = useContext(WalletContext)
+  const { changeExplorer, changeSilentiumURL, wallet } = useContext(WalletContext)
 
-  const handleChange = (e: any) => {
-    changeExplorer(e.target.value)
+  const [explorer, setExplorer] = useState<any>()
+  const [silentiumURL, setSilentiumURL] = useState<any>()
+
+  const handleChangeExplorer = (e: any) => {
+    setExplorer(e.target.value)
+  }
+
+  const handleChangeSilentiumURL = (e: any) => {
+    setSilentiumURL(e.target.value)
+  }
+
+  const save = () => {
+    if (explorer) changeExplorer(explorer)
+    if (silentiumURL) changeSilentiumURL(silentiumURL)
+    toggleShowConfig()
   }
 
   return (
     <Container>
       <Content>
         <Title text='Explorer' subtext='Choose your explorer' />
-        <Select onChange={handleChange} value={wallet.explorer}>
+        <Select label='Explorer' onChange={handleChangeExplorer} value={wallet.explorer}>
           {getExplorerNames(wallet.network).map((e) => (
             <option key={e}>{e}</option>
           ))}
         </Select>
-        <p className='mt-10'>Helm uses the explorer to query the chain</p>
+        <br />
+        <Input label='Silentium' placeholder={wallet.silentiumURL} onChange={handleChangeSilentiumURL} type="text" />
       </Content>
       <ButtonsOnBottom>
+        <Button onClick={save} label='Save' />
         <Button onClick={toggleShowConfig} label='Back to wallet' secondary />
       </ButtonsOnBottom>
     </Container>
