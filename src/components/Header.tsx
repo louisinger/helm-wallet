@@ -6,6 +6,7 @@ import { NavigationContext, Pages } from '../providers/navigation'
 import { WalletContext } from '../providers/wallet'
 import { NetworkName } from '../lib/network'
 import { isInitialized } from '../lib/wallet'
+import { Toaster } from 'react-hot-toast'
 
 const Testnet = () => (
   <div className='flex items-center'>
@@ -35,6 +36,7 @@ export default function Header() {
       <button onClick={toggleShowConfig} className='p-2 rounded-full bg-gray-100 dark:bg-gray-800'>
         <SettingsIcon />
       </button>
+      <Toaster />
     </header>
   )
 }

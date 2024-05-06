@@ -38,10 +38,15 @@ export function createOutputs(
     const outputs: Output[] = [];
     for (const [scanKeyHex, paymentGroup] of paymentGroups.entries()) {
         const scanKey = Buffer.from(scanKeyHex, 'hex');
-        const point = secp.publicKeyTweakMul(scanKey, inputHash, true);
+        const point = secp.publicKeyTweakMul(
+            Buffer.from(scanKey), 
+            Buffer.from(inputHash), 
+            true
+        );
         const ecdhSecret = secp.publicKeyTweakMul(
-            point,
-            sumOfPrivateKeys,
+            Buffer.from(point),
+            Buffer.from(sumOfPrivateKeys),
+            true,
         );
 
         let n = 0;
@@ -52,14 +57,14 @@ export function createOutputs(
             );
 
             const publicKey = secp.publicKeyTweakAdd(
-                spendKey,
-                tweak,
+                Buffer.from(spendKey),
+                Buffer.from(tweak),
                 true,
             );
 
             const script = Buffer.concat([
                 Buffer.from([0x51, 0x20]),
-                publicKey,
+                publicKey.slice(1),
             ]);
 
             outputs.push({

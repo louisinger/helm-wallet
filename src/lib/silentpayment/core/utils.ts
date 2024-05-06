@@ -1,4 +1,5 @@
 import * as secp from 'secp256k1'
+import ecc from '@bitcoinerlab/secp256k1'
 import { Outpoint, PrivateKey } from './types'
 import { createHash } from 'crypto'
 
@@ -25,8 +26,12 @@ export const calculateSumOfPrivateKeys = (keys: PrivateKey[]): Buffer => {
     return key
   })
 
+  if (negatedKeys.length === 1) {
+    return negatedKeys[0]
+  }
+
   return Buffer.from(
-    negatedKeys.slice(1).reduce((acc, key) => Buffer.from(secp.privateKeyTweakAdd(acc, key)), negatedKeys[0]),
+    negatedKeys.slice(1).reduce((acc, key) => Buffer.from(ecc.privateAdd(acc, key)!), negatedKeys[0]),
   )
 }
 

@@ -7,7 +7,7 @@ type ChainTipHeightResponse = AxiosResponse<{ height: number }>
 export class SilentiumAPI {
     private axiosInstance: AxiosInstance;
 
-    constructor(private baseURL: string) {
+    constructor(baseURL: string) {
         this.axiosInstance = axios.create({
             baseURL,
             headers: {

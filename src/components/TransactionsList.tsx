@@ -37,7 +37,7 @@ export default function TransactionsList({ short }: { short?: boolean }) {
     <div className='mt-4'>
       <div className='flex justify-between'>
         <Label text={`${short ? 'Last' : 'All'} transactions`} />
-        {reloading ? <Label text='Reloading...' pulse /> : <Label text={`Up to date at height ${wallet.scannedBlockHeight}`} />}
+        {reloading ? <Label text='Reloading...' pulse /> : <Label text={`Up to date at height ${wallet.scannedBlockHeight[wallet.network]}`} />}
       </div>
       <div className='flex flex-col gap-2 h-72 overflow-auto'>
         {showTxs.map((t) => (

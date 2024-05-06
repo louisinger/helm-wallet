@@ -13,6 +13,10 @@ import { inOneMinute, someSeconds } from '../../../lib/constants'
 import { sendSats } from '../../../lib/transactions'
 import Error from '../../../components/Error'
 import Loading from '../../../components/Loading'
+import { notify } from '../../../components/Toast'
+import { extractError } from '../../../lib/error'
+import { EsploraChainSource } from '../../../lib/chainsource'
+import { getRestApiExplorerURL } from '../../../lib/explorers'
 
 export default function SendPayment() {
   const { navigate } = useContext(NavigationContext)
@@ -23,8 +27,17 @@ export default function SendPayment() {
 
   const { total } = sendInfo
 
-  const onTxid = (txid: string) => {
-    if (!txid) return setError('Error broadcasting transaction')
+  const onTx = async (txhex: string) => {
+    if (!txhex) {
+      return setError('Error broadcasting transaction')
+    }
+
+    const chainSrc = new EsploraChainSource(
+      getRestApiExplorerURL(wallet)
+    )
+
+    const txid = await chainSrc.broadcast(txhex)
+
     setSendInfo({ ...sendInfo, txid })
     setTimeout(reloadWallet, someSeconds)
     setTimeout(reloadWallet, inOneMinute)
@@ -40,7 +53,12 @@ export default function SendPayment() {
     if (!mnemonic) return
 
     if (sendInfo.address && sendInfo.total && sendInfo.txFees) {
-      sendSats(sendInfo.total, sendInfo.address, sendInfo.txFees, wallet, mnemonic).then((txid) => onTxid(txid))
+      sendSats(sendInfo.total, sendInfo.address, sendInfo.txFees, wallet, mnemonic)
+        .then(onTx)
+        .catch((e) => {
+          console.error(e)
+          notify('error', extractError(e))
+        })
     }
   }
 

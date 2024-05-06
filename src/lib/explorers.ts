@@ -37,7 +37,7 @@ const explorers: Explorer[] = [
   {
     name: ExplorerName.Nigiri,
     [NetworkName.Regtest]: {
-      restApiExplorerURL: 'http://localhost:5000',
+      restApiExplorerURL: 'http://localhost:3000',
     },
   },
 ]
@@ -45,9 +45,13 @@ const explorers: Explorer[] = [
 export const getExplorerNames = (network: NetworkName) =>
   explorers.filter((e: Explorer) => e[network]).map((e) => e.name)
 
-const getRestApiExplorerURL = ({ explorer, network }: Wallet) => {
+export const getRestApiExplorerURL = ({ explorer, network }: Wallet): string => {
   const exp = explorers.find((e) => e.name === explorer)
-  if (exp?.[network]) return exp[network]?.restApiExplorerURL
+  if (!exp) throw new Error('Explorer not found')
+  if (!exp[network]) throw new Error(`Explorer ${explorer} does not support ${network}`)
+  const url = exp[network]?.restApiExplorerURL
+  if (!url) throw new Error('Explorer URL not found')
+  return url
 }
 
 export const getTxIdURL = (txid: string, wallet: Wallet) => {
@@ -101,17 +105,4 @@ export const fetchTxHex = async (txid: string, wallet: Wallet): Promise<string> 
   const url = `${getRestApiExplorerURL(wallet)}/api/tx/${txid}/hex`
   const response = await fetch(url)
   return await response.text()
-}
-
-export const broadcastTxHex = async (txHex: string, wallet: Wallet): Promise<{ id: string }> => {
-  const t = wallet.network === NetworkName.Testnet ? 'testnet.' : ''
-  const url = `https://api.${t}boltz.exchange/v2/chain/L-BTC/transaction`
-  const response = await fetch(url, {
-    body: JSON.stringify({ hex: txHex }),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    method: 'POST',
-  })
-  return await response.json()
 }

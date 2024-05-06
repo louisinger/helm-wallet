@@ -14,7 +14,8 @@ export default function Explorer() {
   const { toggleShowConfig } = useContext(ConfigContext)
   const { changeExplorer, changeSilentiumURL, wallet } = useContext(WalletContext)
 
-  const [explorer, setExplorer] = useState<any>()
+  const explorerNames = getExplorerNames(wallet.network)
+  const [explorer, setExplorer] = useState(explorerNames.includes(wallet.explorer) ? wallet.explorer : explorerNames[0])
   const [silentiumURL, setSilentiumURL] = useState<any>()
 
   const handleChangeExplorer = (e: any) => {
@@ -31,17 +32,18 @@ export default function Explorer() {
     toggleShowConfig()
   }
 
+
   return (
     <Container>
       <Content>
         <Title text='Explorer' subtext='Choose your explorer' />
-        <Select label='Explorer' onChange={handleChangeExplorer} value={wallet.explorer}>
+        <Select label='Explorer' onChange={handleChangeExplorer} value={explorer}>
           {getExplorerNames(wallet.network).map((e) => (
             <option key={e}>{e}</option>
           ))}
         </Select>
         <br />
-        <Input label='Silentium' placeholder={wallet.silentiumURL} onChange={handleChangeSilentiumURL} type="text" />
+        <Input label='Silentium' placeholder={wallet.silentiumURL[wallet.network]} onChange={handleChangeSilentiumURL} type="text" />
       </Content>
       <ButtonsOnBottom>
         <Button onClick={save} label='Save' />

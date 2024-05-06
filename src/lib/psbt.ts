@@ -1,4 +1,5 @@
-import { Psbt, Transaction } from 'bitcoinjs-lib'
+import { Psbt } from 'bitcoinjs-lib'
+import * as secp from 'secp256k1'
 import { Wallet } from '../providers/wallet'
 import { Utxo } from './types'
 import { CoinsSelected } from './coinSelection'
@@ -37,7 +38,7 @@ export async function buildPsbt(coinSelection: CoinsSelected, fees: number, dest
     coins.map((coin: Utxo) => getCoinPrivKey(coin, wallet.network, mnemonic).then((key) => ({ key, isXOnly: true }))),
   )
 
-  const smallestOutpointCoin = coins.reduce((acc, coin) => {
+  const smallestOutpointCoin = coins.slice(1).reduce((acc, coin) => {
     const comp = Buffer.from(coin.txid, 'hex').reverse().compare(Buffer.from(acc.txid, 'hex').reverse())
     if (comp < 0 || (comp === 0 && coin.vout < acc.vout)) return coin
     return acc
@@ -52,7 +53,11 @@ export async function buildPsbt(coinSelection: CoinsSelected, fees: number, dest
       coins.map((coin: Utxo) => ({
         hash: coin.txid,
         index: coin.vout,
-        sighashType: Transaction.SIGHASH_DEFAULT,
+        witnessUtxo: {
+          script: coin.script,
+          value: coin.value,
+        },
+        tapInternalKey: coin.script.slice(2),
       })),
     )
     .addOutputs(outputs)

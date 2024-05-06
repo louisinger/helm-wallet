@@ -28,12 +28,16 @@ export function scan(
 }
 
 export function computeTweak(scanPrivateKey: Buffer, scalar: Buffer, counter: number): Buffer {
-  const ecdhSecret = secp.privateKeyTweakMul(scanPrivateKey, scalar)
+  const ecdhSecret = secp.publicKeyTweakMul(
+    Buffer.from(scalar),
+    Buffer.from(scanPrivateKey), 
+    true,
+  )
   return createTaggedHash('BIP0352/SharedSecret', Buffer.concat([Buffer.from(ecdhSecret), serialiseUint32(counter)]))
 }
 
 export function computeScript(scanPrivateKey: Buffer, spendPublicKey: Buffer, counter: number, scalar: Buffer): Buffer {
   const tweak = computeTweak(scanPrivateKey, scalar, counter)
   const publicKey = secp.publicKeyTweakAdd(spendPublicKey, tweak, true)
-  return Buffer.concat([taprootScriptPrefix, publicKey])
+  return Buffer.concat([taprootScriptPrefix, publicKey.slice(1)])
 }

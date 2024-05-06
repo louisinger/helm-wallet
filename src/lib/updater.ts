@@ -75,31 +75,14 @@ export class Updater {
           break
         }
 
-        if (p2trInBlock && input.script.equals(this.p2trScript)) {
-          result.spentUtxos.push({
-            txid: Buffer.from(input.hash).reverse().toString('hex'),
-            vout: input.index,
-          })
-          txInfo.amount -= currentUtxos.find(
-            (utxo) => utxo.txid === Buffer.from(input.hash).reverse().toString('hex') && utxo.vout === input.index,
-          )!.value
-          isWalletTx = true
-          continue
-        }
+        const inputTxid = Buffer.from(input.hash).reverse().toString('hex') 
+        const foundUtxo = currentUtxos.find((utxo) => utxo.txid === inputTxid && utxo.vout === input.index)
+        if (!foundUtxo) continue
 
-        const script = b2h(input.script)
-
-        if (spentScriptsToFind.has(script)) {
-          result.spentUtxos.push({
-            txid: Buffer.from(input.hash).reverse().toString('hex'),
-            vout: input.index,
-          })
-          txInfo.amount -= currentUtxos.find(
-            (utxo) => utxo.txid === Buffer.from(input.hash).reverse().toString('hex') && utxo.vout === input.index,
-          )!.value
-          isWalletTx = true
-          spentScriptsToFind.delete(script)
-        }
+        spentScriptsToFind.delete(b2h(foundUtxo.script))
+        result.spentUtxos.push({ txid: foundUtxo.txid, vout: foundUtxo.vout })
+        txInfo.amount -= foundUtxo.value
+        isWalletTx = true
       }
 
       for (const [vout, output] of tx.outs.entries()) {

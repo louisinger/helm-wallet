@@ -3,12 +3,13 @@ import { readWalletFromStorage, saveMnemonicToStorage, saveWalletToStorage } fro
 import { NavigationContext, Pages } from './navigation'
 import { NetworkName } from '../lib/network'
 import { Mnemonic, Transactions, Utxos, PublicKeys } from '../lib/types'
-import { ExplorerName } from '../lib/explorers'
+import { ExplorerName, getExplorerNames, getRestApiExplorerURL } from '../lib/explorers'
 import { defaultExplorer, defaultNetwork } from '../lib/constants'
 import { getSilentPaymentScanPrivateKey, isInitialized } from '../lib/wallet'
 import { SilentiumAPI } from '../lib/silentpayment/silentium/api'
 import { EsploraChainSource } from '../lib/chainsource'
 import { Updater, applyUpdate } from '../lib/updater'
+import { notify } from '../components/Toast'
 
 export interface Wallet {
   explorer: ExplorerName
@@ -17,14 +18,18 @@ export interface Wallet {
   utxos: Utxos
   publicKeys: PublicKeys
   walletBirthHeight: number
-  scannedBlockHeight: number
-  silentiumURL: string
+  scannedBlockHeight: Record<NetworkName, number>
+  silentiumURL: Record<NetworkName, string>
 }
 
 const defaultWallet: Wallet = {
   explorer: defaultExplorer,
   network: defaultNetwork,
-  silentiumURL: '',
+  silentiumURL: {
+    [NetworkName.Mainnet]: '',
+    [NetworkName.Testnet]: '',
+    [NetworkName.Regtest]: 'http://localhost:9000/v1',
+  },
   transactions: {
     [NetworkName.Mainnet]: [],
     [NetworkName.Regtest]: [],
@@ -41,7 +46,11 @@ const defaultWallet: Wallet = {
     [NetworkName.Testnet]: { p2trPublicKey: '', scanPublicKey: '', spendPublicKey: '' },
   },
   walletBirthHeight: 0,
-  scannedBlockHeight: 0,
+  scannedBlockHeight: {
+    [NetworkName.Mainnet]: 0,
+    [NetworkName.Regtest]: 0,
+    [NetworkName.Testnet]: 0,
+  },
 }
 
 interface WalletContextProps {
@@ -82,44 +91,59 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   const changeNetwork = async (networkName: NetworkName) => {
     const clone = { ...wallet, network: networkName }
+    const explorersFromNetwork = getExplorerNames(networkName)
+    if (!explorersFromNetwork.includes(clone.explorer)) {
+      clone.explorer = explorersFromNetwork[0]
+    }
+
     updateWallet(clone)
   }
 
   const changeSilentiumURL = async (url: string) => {
-    const clone = { ...wallet, silentiumURL: url }
+    const clone = {
+      ...wallet,
+      silentiumURL: {
+        ...wallet.silentiumURL,
+        [wallet.network]: url,
+      },
+    }
     updateWallet(clone)
   }
 
   const reloadWallet = async (mnemonic: string) => {
     if (!mnemonic || reloading) return
-    setReloading(true)
-    const silentiumAPI = new SilentiumAPI(wallet.silentiumURL)
-    const chainTip = await silentiumAPI.getChainTipHeight()
-    if (chainTip < wallet.scannedBlockHeight) {
+    try {
+      setReloading(true)
+      const silentiumAPI = new SilentiumAPI(wallet.silentiumURL[wallet.network])
+      const chainTip = await silentiumAPI.getChainTipHeight()
+      console.log('chainTip', chainTip)
+      console.log('wallet.scannedBlockHeight[wallet.network]', wallet.scannedBlockHeight[wallet.network])
+      if (chainTip <= wallet.scannedBlockHeight[wallet.network]) {
+        console.log('No new blocks to scan')
+        return
+      }
+
+      const explorer = new EsploraChainSource(getRestApiExplorerURL(wallet))
+      const scanPrivKey = await getSilentPaymentScanPrivateKey(mnemonic, wallet.network)
+      const spendPubKey = Buffer.from(wallet.publicKeys[wallet.network].spendPublicKey, 'hex')
+      const p2trPubKey = Buffer.from(wallet.publicKeys[wallet.network].p2trPublicKey, 'hex')
+      const p2trScript = Buffer.concat([Buffer.from([0x51, 0x20]), p2trPubKey.slice(1)])
+
+      const updater = new Updater(explorer, silentiumAPI, scanPrivKey, spendPubKey, p2trScript)
+
+      for (let i = wallet.scannedBlockHeight[wallet.network] + 1; i <= chainTip; i++) {
+        const updateResult = await updater.updateHeight(i, wallet.utxos[wallet.network])
+        updateWallet({
+          ...applyUpdate(wallet, updateResult),
+          scannedBlockHeight: { ...wallet.scannedBlockHeight, [wallet.network]: i },
+        })
+      }
+    } catch (e) {
+      console.error(e)
+      notify('error', extractErrorMessage(e))
+    } finally {
       setReloading(false)
-      return
     }
-
-    const explorer = new EsploraChainSource(wallet.explorer)
-    const scanPrivKey = await getSilentPaymentScanPrivateKey(mnemonic, wallet.network)
-    const spendPubKey = Buffer.from(wallet.publicKeys[wallet.network].spendPublicKey, 'hex')
-    const p2trPubKey = Buffer.from(wallet.publicKeys[wallet.network].p2trPublicKey, 'hex')
-    const p2trScript = Buffer.concat([Buffer.from([0x51, 0x20]), p2trPubKey.slice(1)])
-
-    const updater = new Updater(
-      explorer,
-      silentiumAPI,
-      scanPrivKey,
-      spendPubKey,
-      p2trScript,
-    )
-    
-    for (let i = wallet.scannedBlockHeight+1; i <= chainTip; i++) {
-      const updateResult = await updater.updateHeight(i, wallet.utxos[wallet.network])
-      updateWallet({ ...applyUpdate(wallet, updateResult), scannedBlockHeight: i })
-    }
-
-    setReloading(false)
   }
 
   const resetWallet = () => {
@@ -166,4 +190,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </WalletContext.Provider>
   )
+}
+
+function extractErrorMessage(e: any): string {
+  if (e instanceof Error) return e.message
+  if (typeof e === 'string') return e
+  return 'An error occurred'
 }
