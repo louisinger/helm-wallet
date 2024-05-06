@@ -20,7 +20,7 @@ export default function InitNew() {
   const handleCancel = () => navigate(Pages.Init)
 
   const handleProceed = () => {
-    setInitInfo({ mnemonic })
+    setInitInfo({ mnemonic, restoreFrom: -1 })
     navigate(Pages.InitPassword)
   }
 

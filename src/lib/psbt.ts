@@ -1,5 +1,4 @@
 import { Psbt } from 'bitcoinjs-lib'
-import * as secp from 'secp256k1'
 import { Wallet } from '../providers/wallet'
 import { Utxo } from './types'
 import { CoinsSelected } from './coinSelection'
@@ -54,10 +53,10 @@ export async function buildPsbt(coinSelection: CoinsSelected, fees: number, dest
         hash: coin.txid,
         index: coin.vout,
         witnessUtxo: {
-          script: coin.script,
+          script: Buffer.from(coin.script, 'hex'),
           value: coin.value,
         },
-        tapInternalKey: coin.script.slice(2),
+        tapInternalKey: Buffer.from(coin.script, 'hex').slice(2),
       })),
     )
     .addOutputs(outputs)

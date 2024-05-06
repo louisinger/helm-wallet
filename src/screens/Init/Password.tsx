@@ -13,7 +13,7 @@ import Container from '../../components/Container'
 
 export default function InitPassword() {
   const { navigate } = useContext(NavigationContext)
-  const { reloadWallet, initWallet } = useContext(WalletContext)
+  const { initWallet, reloadWallet } = useContext(WalletContext)
   const { initInfo } = useContext(FlowContext)
 
   const [label, setLabel] = useState('')
@@ -22,13 +22,14 @@ export default function InitPassword() {
   const handleCancel = () => navigate(Pages.Init)
 
   const handleProceed = () => {
-    const { mnemonic } = initInfo
+    const { mnemonic, restoreFrom, network } = initInfo
     saveMnemonicToStorage(mnemonic, password)
-    getKeys(mnemonic).then(({ publicKeys }) => {
-      initWallet(publicKeys)
-      reloadWallet(mnemonic)
-      navigate(Pages.Wallet)
-    })
+    getKeys(mnemonic)
+      .then((pubkeys) => initWallet(pubkeys, restoreFrom >= 0 ? restoreFrom : undefined, network))
+      .then((wallet) => {
+        reloadWallet(mnemonic, wallet)
+        return navigate(Pages.Wallet)
+      })
   }
 
   return (

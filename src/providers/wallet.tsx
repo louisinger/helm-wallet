@@ -1,5 +1,5 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react'
-import { readWalletFromStorage, saveMnemonicToStorage, saveWalletToStorage } from '../lib/storage'
+import { clearStorage, useStorage } from '../lib/storage'
 import { NavigationContext, Pages } from './navigation'
 import { NetworkName } from '../lib/network'
 import { Mnemonic, Transactions, Utxos, PublicKeys } from '../lib/types'
@@ -17,7 +17,6 @@ export interface Wallet {
   transactions: Transactions
   utxos: Utxos
   publicKeys: PublicKeys
-  walletBirthHeight: number
   scannedBlockHeight: Record<NetworkName, number>
   silentiumURL: Record<NetworkName, string>
 }
@@ -45,11 +44,10 @@ const defaultWallet: Wallet = {
     [NetworkName.Regtest]: { p2trPublicKey: '', scanPublicKey: '', spendPublicKey: '' },
     [NetworkName.Testnet]: { p2trPublicKey: '', scanPublicKey: '', spendPublicKey: '' },
   },
-  walletBirthHeight: 0,
   scannedBlockHeight: {
-    [NetworkName.Mainnet]: 0,
-    [NetworkName.Regtest]: 0,
-    [NetworkName.Testnet]: 0,
+    [NetworkName.Mainnet]: -1,
+    [NetworkName.Regtest]: -1,
+    [NetworkName.Testnet]: -1,
   },
 }
 
@@ -57,11 +55,10 @@ interface WalletContextProps {
   changeExplorer: (e: ExplorerName) => void
   changeSilentiumURL: (url: string) => void
   changeNetwork: (n: NetworkName) => void
-  loading: boolean
   reloading: boolean
-  reloadWallet: (mnemonic: Mnemonic) => void
+  reloadWallet: (mnemonic: Mnemonic, wallet: Wallet) => void
   resetWallet: () => void
-  initWallet: (publicKeys: PublicKeys) => void
+  initWallet: (publicKeys: PublicKeys, restoreFrom?: number, network?: NetworkName) => Promise<Wallet>
   wallet: Wallet
 }
 
@@ -69,24 +66,22 @@ export const WalletContext = createContext<WalletContextProps>({
   changeExplorer: () => {},
   changeSilentiumURL: () => {},
   changeNetwork: () => {},
-  loading: true,
   reloading: false,
   reloadWallet: () => {},
   resetWallet: () => {},
-  initWallet: () => {},
+  initWallet: () => Promise.resolve(defaultWallet),
   wallet: defaultWallet,
 })
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const { navigate } = useContext(NavigationContext)
 
-  const [loading, setLoading] = useState(true)
   const [reloading, setReloading] = useState(false)
-  const [wallet, setWallet] = useState(defaultWallet)
+  const [wallet, setWallet] = useStorage<Wallet>('wallet', defaultWallet)
 
   const changeExplorer = async (explorer: ExplorerName) => {
     const clone = { ...wallet, explorer }
-    updateWallet(clone)
+    setWallet(clone)
   }
 
   const changeNetwork = async (networkName: NetworkName) => {
@@ -96,7 +91,13 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       clone.explorer = explorersFromNetwork[0]
     }
 
-    updateWallet(clone)
+    if (wallet.scannedBlockHeight[networkName] === -1) {
+      const explorer = new EsploraChainSource(getRestApiExplorerURL(clone))
+      const height = await explorer.getChainTipHeight()
+      clone.scannedBlockHeight[networkName] = height
+    }
+
+    setWallet(clone)
   }
 
   const changeSilentiumURL = async (url: string) => {
@@ -107,17 +108,15 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         [wallet.network]: url,
       },
     }
-    updateWallet(clone)
+    setWallet(clone)
   }
 
-  const reloadWallet = async (mnemonic: string) => {
+  const reloadWallet = async (mnemonic: string, wallet: Wallet) => {
     if (!mnemonic || reloading) return
     try {
       setReloading(true)
       const silentiumAPI = new SilentiumAPI(wallet.silentiumURL[wallet.network])
       const chainTip = await silentiumAPI.getChainTipHeight()
-      console.log('chainTip', chainTip)
-      console.log('wallet.scannedBlockHeight[wallet.network]', wallet.scannedBlockHeight[wallet.network])
       if (chainTip <= wallet.scannedBlockHeight[wallet.network]) {
         console.log('No new blocks to scan')
         return
@@ -133,10 +132,12 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
       for (let i = wallet.scannedBlockHeight[wallet.network] + 1; i <= chainTip; i++) {
         const updateResult = await updater.updateHeight(i, wallet.utxos[wallet.network])
-        updateWallet({
+        wallet = {
           ...applyUpdate(wallet, updateResult),
           scannedBlockHeight: { ...wallet.scannedBlockHeight, [wallet.network]: i },
-        })
+        }
+
+        setWallet(wallet)
       }
     } catch (e) {
       console.error(e)
@@ -147,31 +148,33 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const resetWallet = () => {
-    updateWallet(defaultWallet)
-    saveMnemonicToStorage('', 'password')
+    setWallet(defaultWallet)
     navigate(Pages.Init)
   }
 
-  const updateWallet = (data: Wallet) => {
-    setWallet({ ...data })
-    saveWalletToStorage(data)
-  }
+  const initWallet = async (publicKeys: PublicKeys, restoreFrom?: number, network?: NetworkName) => {
+    const explorer = new EsploraChainSource(getRestApiExplorerURL(wallet))
+    const walletBirthHeight = restoreFrom ?? (await explorer.getChainTipHeight())
+    const net = network ?? wallet.network
 
-  const initWallet = (publicKeys: PublicKeys) => {
-    updateWallet({ ...defaultWallet, publicKeys })
+    const initWallet = {
+      ...wallet,
+      publicKeys,
+      network: net,
+      scannedBlockHeight: {
+        ...defaultWallet.scannedBlockHeight,
+        [net]: walletBirthHeight,
+      },
+      explorer: network ? getExplorerNames(net)[0] : wallet.explorer,
+    }
+
+    setWallet(initWallet)
+    return initWallet
   }
 
   useEffect(() => {
-    const getWalletFromStorage = async () => {
-      if (!loading) return
-      const wallet = readWalletFromStorage() ?? defaultWallet
-      updateWallet(wallet)
-      setLoading(false)
-      navigate(isInitialized(wallet) ? Pages.Wallet : Pages.Init)
-    }
-    getWalletFromStorage()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading])
+    navigate(isInitialized(wallet) ? Pages.Wallet : Pages.Init)
+  }, [])
 
   return (
     <WalletContext.Provider
@@ -179,7 +182,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         changeExplorer,
         changeSilentiumURL,
         changeNetwork,
-        loading,
         reloading,
         reloadWallet,
         resetWallet,

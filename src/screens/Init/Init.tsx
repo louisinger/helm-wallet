@@ -11,7 +11,7 @@ export default function Init() {
   return (
     <Container>
       <div className='mt-24 max-w-64 md:max-w-full mx-auto'>
-        <Title text='Helm wallet' subtext='The lightning wallet even your grandma can use' />
+        <Title text='Silentium app' subtext='silent payment wallet' />
       </div>
       <ButtonsOnBottom>
         <Button onClick={() => navigate(Pages.InitNew)} label='New wallet' />

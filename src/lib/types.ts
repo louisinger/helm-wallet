@@ -19,9 +19,9 @@ export type Utxo = {
   txid: string
   vout: number
   value: number
-  script: Buffer
+  script: string
   silentPayment?: {
-    tweak: Buffer
+    tweak: string
   }
 }
 

@@ -10,11 +10,20 @@ import { NavigationContext, Pages } from '../../providers/navigation'
 import Content from '../../components/Content'
 import { FlowContext } from '../../providers/flow'
 import Container from '../../components/Container'
+import Input from '../../components/Input'
+import Select from '../../components/Select'
+import { defaultNetwork } from '../../lib/constants'
+import { NetworkName } from '../../lib/network'
 
 enum ButtonLabel {
   Incomplete = 'Incomplete mnemonic',
   Invalid = 'Invalid mnemonic',
   Ok = 'Continue',
+}
+
+enum Step {
+  Passphrase,
+  BirthHeight,
 }
 
 export default function InitOld() {
@@ -23,6 +32,9 @@ export default function InitOld() {
 
   const [label, setLabel] = useState(ButtonLabel.Incomplete)
   const [passphrase, setPassphrase] = useState(Array.from({ length: 12 }, () => ''))
+  const [birthHeight, setBirthHeight] = useState(-1)
+  const [network, setNetwork] = useState(defaultNetwork)
+  const [step, setStep] = useState(Step.Passphrase)
 
   useEffect(() => {
     const completed = [...passphrase].filter((a) => a)?.length === 12
@@ -30,6 +42,14 @@ export default function InitOld() {
     const valid = validateMnemonic(passphrase.join(' '))
     setLabel(valid ? ButtonLabel.Ok : ButtonLabel.Invalid)
   }, [passphrase])
+
+  const handleBirthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target
+    const birth = parseInt(value, 10)
+    if (Number.isNaN(birth) || birth < 0) setLabel(ButtonLabel.Invalid)
+    setBirthHeight(parseInt(value, 10))
+    setLabel(ButtonLabel.Ok)
+  }
 
   const handleChange = (e: any, i: number) => {
     const { value } = e.target
@@ -45,8 +65,13 @@ export default function InitOld() {
   const handleCancel = () => navigate(Pages.Init)
 
   const handleProceed = () => {
+    if (step === Step.Passphrase) {
+      setStep(Step.BirthHeight)
+      return
+    }
+
     const mnemonic = passphrase.join(' ')
-    setInitInfo({ mnemonic })
+    setInitInfo({ mnemonic, restoreFrom: birthHeight, network: network as NetworkName})
     navigate(Pages.InitPassword)
   }
 
@@ -56,15 +81,26 @@ export default function InitOld() {
     <Container>
       <Content>
         <Title text='Restore wallet' subtext='Insert your secret words' />
-        <div className='flex flex-col gap-2'>
-          <Error error={label === ButtonLabel.Invalid} text={label} />
-          <Columns>
-            {[...passphrase].map((word, i) => (
-              // eslint-disable-next-line react/no-array-index-key
-              <Word key={i} left={i + 1} onChange={(e: any) => handleChange(e, i)} text={word} />
-            ))}
-          </Columns>
-        </div>
+        {step === Step.Passphrase ? (
+          <div className='flex flex-col gap-2'>
+            <Error error={label === ButtonLabel.Invalid} text={label} />
+            <Columns>
+              {[...passphrase].map((word, i) => (
+                // eslint-disable-next-line react/no-array-index-key
+                <Word key={i} left={i + 1} onChange={(e: any) => handleChange(e, i)} text={word} />
+              ))}
+            </Columns>
+          </div>
+        ) : (
+          <div className='flex flex-col gap-2'>
+            <Select label='Network' value={network} onChange={(e) => setNetwork(e.target.value)}>
+              <option value={NetworkName.Mainnet}>mainnet</option>
+              <option value={NetworkName.Testnet}>testnet</option>
+              <option value={NetworkName.Regtest}>regtest</option>
+            </Select>
+            <Input label='Birth block height' onChange={handleBirthChange} type='number' />
+          </div>
+        )}
       </Content>
       <ButtonsOnBottom>
         <Button onClick={handleProceed} label={label} disabled={disabled} />

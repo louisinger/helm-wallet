@@ -1,7 +1,10 @@
 import { ReactNode, createContext, useState } from 'react'
+import { NetworkName } from '../lib/network'
 
 export interface InitInfo {
   mnemonic: string
+  restoreFrom: number
+  network?: NetworkName
 }
 
 export type SendInfo = {
@@ -21,6 +24,7 @@ interface FlowContextProps {
 
 export const emptyInitInfo: InitInfo = {
   mnemonic: '',
+  restoreFrom: -1,
 }
 
 export const FlowContext = createContext<FlowContextProps>({

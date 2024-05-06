@@ -31,7 +31,7 @@ export class Updater {
 
     const silentPayUtxosScripts = currentUtxos
       .filter((utxo) => utxo.silentPayment !== undefined)
-      .map((utxo) => utxo.script)
+      .map((utxo) => h2b(utxo.script))
 
     const silentPaySpentInBlock = basicFilter.filter(silentPayUtxosScripts).map(b2h)
     const p2trInBlock = basicFilter.match(this.p2trScript)
@@ -79,7 +79,7 @@ export class Updater {
         const foundUtxo = currentUtxos.find((utxo) => utxo.txid === inputTxid && utxo.vout === input.index)
         if (!foundUtxo) continue
 
-        spentScriptsToFind.delete(b2h(foundUtxo.script))
+        spentScriptsToFind.delete(foundUtxo.script)
         result.spentUtxos.push({ txid: foundUtxo.txid, vout: foundUtxo.vout })
         txInfo.amount -= foundUtxo.value
         isWalletTx = true
@@ -94,7 +94,7 @@ export class Updater {
           result.newUtxos.push({
             txid: tx.getId(),
             vout,
-            script: output.script,
+            script: output.script.toString('hex'),
             value: output.value,
           })
           txInfo.amount += output.value
@@ -110,10 +110,10 @@ export class Updater {
           result.newUtxos.push({
             txid: tx.getId(),
             vout,
-            script: output.script,
+            script: output.script.toString('hex'),
             value: output.value,
             silentPayment: {
-              tweak: computeTweak(this.scanPrivateKey, scalar, 0),
+              tweak: computeTweak(this.scanPrivateKey, scalar, 0).toString('hex'),
             },
           })
           txInfo.amount += output.value
@@ -128,10 +128,10 @@ export class Updater {
               result.newUtxos.push({
                 txid: tx.getId(),
                 vout: i,
-                script: tx.outs[i].script,
+                script: tx.outs[i].script.toString('hex'),
                 value: tx.outs[i].value,
                 silentPayment: {
-                  tweak: computeTweak(this.scanPrivateKey, scalar, nextCounter),
+                  tweak: computeTweak(this.scanPrivateKey, scalar, nextCounter).toString('hex'),
                 },
               })
               isWalletTx = true

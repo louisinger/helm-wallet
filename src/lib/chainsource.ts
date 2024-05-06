@@ -9,9 +9,9 @@ export type ChainSourceUtxo = {
 
 export interface ChainSource {
   broadcast(txHex: string): Promise<string>
-  getBlockHash(height: number): Promise<string>
   getBlock(hash: string): Promise<Block>
   getBlockTime(hash: string): Promise<number>
+  getChainTipHeight(): Promise<number>
 }
 
 export class EsploraChainSource implements ChainSource {
@@ -47,13 +47,13 @@ export class EsploraChainSource implements ChainSource {
     return Block.fromBuffer(Buffer.from(resp.data))
   }
 
-  async getBlockHash(height: number): Promise<string> {
-    const resp = await this.axiosInstance.get<any, AxiosResponse<{ hash: string }>>(`/block-height/${height}`)
-    return resp.data.hash
-  }
-
   async getBlockTime(hash: string): Promise<number> {
     const resp = await this.axiosInstance.get<any, AxiosResponse<{ timestamp: number }>>(`/block/${hash}`)
     return resp.data.timestamp
+  }
+
+  async getChainTipHeight(): Promise<number> {
+    const resp = await this.axiosInstance.get<any, AxiosResponse<number>>('/blocks/tip/height')
+    return resp.data
   }
 }

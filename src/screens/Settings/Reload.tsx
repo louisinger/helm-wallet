@@ -10,9 +10,9 @@ import NeedsPassword from '../../components/NeedsPassword'
 
 export default function Reload() {
   const { toggleShowConfig } = useContext(ConfigContext)
-  const { reloading, reloadWallet } = useContext(WalletContext)
+  const { reloading, reloadWallet, wallet } = useContext(WalletContext)
 
-  const handleReload = (mnemonic: string) => reloadWallet(mnemonic)
+  const handleReload = (mnemonic: string) => reloadWallet(mnemonic, wallet)
 
   return (
     <div className='flex flex-col h-full justify-between'>

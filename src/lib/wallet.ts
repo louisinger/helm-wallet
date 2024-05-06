@@ -21,7 +21,7 @@ export async function getCoinPrivKey(coin: Utxo, network: NetworkName, mnemonic:
     const { spend } = deriveBIP352Keys(masterNode, network === NetworkName.Mainnet)
     const privKey = spend.privateKey
     if (!privKey) throw new Error('Could not derive private key')
-    const tweakedKey = ecc.privateAdd(privKey, coin.silentPayment.tweak)
+    const tweakedKey = ecc.privateAdd(privKey, Buffer.from(coin.silentPayment.tweak, 'hex'))
     if (!tweakedKey) throw new Error('Could not tweak private key')
     return Buffer.from(tweakedKey)
   }
@@ -30,9 +30,12 @@ export async function getCoinPrivKey(coin: Utxo, network: NetworkName, mnemonic:
   return p2trPrivateKey
 }
 
-const getSilentPaymentPublicKeys = (master: BIP32Interface, network: NetworkName): { scanPublicKey: string, spendPublicKey: string } => {
-    const { scan, spend } = deriveBIP352Keys(master, network === NetworkName.Mainnet)
-    return { scanPublicKey: scan.publicKey.toString('hex'), spendPublicKey: spend.publicKey.toString('hex') }
+const getSilentPaymentPublicKeys = (
+  master: BIP32Interface,
+  network: NetworkName,
+): { scanPublicKey: string; spendPublicKey: string } => {
+  const { scan, spend } = deriveBIP352Keys(master, network === NetworkName.Mainnet)
+  return { scanPublicKey: scan.publicKey.toString('hex'), spendPublicKey: spend.publicKey.toString('hex') }
 }
 
 const getP2TRPublicKey = (master: BIP32Interface, network: NetworkName): { p2trPublicKey: string } => {
@@ -61,16 +64,14 @@ export async function getSilentPaymentScanPrivateKey(mnemonic: string, network: 
   return scan.privateKey
 }
 
-export const getKeys = async (mnemonic: Mnemonic): Promise<{ publicKeys: PublicKeys }> => {
+export const getKeys = async (mnemonic: Mnemonic): Promise<PublicKeys> => {
   const seed = await mnemonicToSeed(mnemonic)
   if (!seed) throw new Error('Could not get seed from mnemonic')
   const master = bip32.fromSeed(seed)
   return {
-    publicKeys: {
-      [NetworkName.Mainnet]: getPublicKeys(master, NetworkName.Mainnet),
-      [NetworkName.Regtest]: getPublicKeys(master, NetworkName.Regtest),
-      [NetworkName.Testnet]: getPublicKeys(master, NetworkName.Testnet),
-    }
+    [NetworkName.Mainnet]: getPublicKeys(master, NetworkName.Mainnet),
+    [NetworkName.Regtest]: getPublicKeys(master, NetworkName.Regtest),
+    [NetworkName.Testnet]: getPublicKeys(master, NetworkName.Testnet),
   }
 }
 
@@ -91,14 +92,14 @@ export function getSilentPaymentAddress(wallet: Wallet): string {
   return encodeSilentPaymentAddress(
     Buffer.from(scanPublicKey, 'hex'),
     Buffer.from(spendPublicKey, 'hex'),
-    getNetwork(wallet.network)
+    getNetwork(wallet.network),
   )
 }
 
 export function getP2TRAddress(wallet: Wallet): string {
-  const p2tr = payments.p2tr({ 
-    network: getNetwork(wallet.network), 
-    pubkey: Buffer.from(wallet.publicKeys[wallet.network].p2trPublicKey, 'hex').slice(1)
+  const p2tr = payments.p2tr({
+    network: getNetwork(wallet.network),
+    pubkey: Buffer.from(wallet.publicKeys[wallet.network].p2trPublicKey, 'hex').slice(1),
   })
 
   if (!p2tr.address) throw new Error('Could not generate P2TR address')
@@ -106,7 +107,10 @@ export function getP2TRAddress(wallet: Wallet): string {
   return p2tr.address
 }
 
-
 export function isInitialized(wallet: Wallet): boolean {
-  return wallet.publicKeys[wallet.network].scanPublicKey !== '' && wallet.publicKeys[wallet.network].spendPublicKey !== '' && wallet.publicKeys[wallet.network].p2trPublicKey !== ''
+  return (
+    wallet.publicKeys[wallet.network].scanPublicKey !== '' &&
+    wallet.publicKeys[wallet.network].spendPublicKey !== '' &&
+    wallet.publicKeys[wallet.network].p2trPublicKey !== ''
+  )
 }

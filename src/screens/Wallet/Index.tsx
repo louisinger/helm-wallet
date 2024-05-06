@@ -20,12 +20,12 @@ export default function Wallet() {
 
   const handleScan = () => {
     if (!mnemonic) setAskPassword(true)
-    else reloadWallet(mnemonic)
+    else reloadWallet(mnemonic, wallet)
   }
 
   const handleMnemonicUnlock = (mnemonic: string) => {
     setMnemonic(mnemonic)
-    reloadWallet(mnemonic)
+    reloadWallet(mnemonic, wallet)
   }
 
   return (
