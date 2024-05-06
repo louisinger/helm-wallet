@@ -1,5 +1,5 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react'
-import { clearStorage, useStorage } from '../lib/storage'
+import { useStorage } from '../lib/storage'
 import { NavigationContext, Pages } from './navigation'
 import { NetworkName } from '../lib/network'
 import { Mnemonic, Transactions, Utxos, PublicKeys } from '../lib/types'

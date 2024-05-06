@@ -1,6 +1,5 @@
 import { Encrypted, decrypt, encrypt } from './encryption'
 import { Config } from '../providers/config'
-import { useState } from 'react'
 
 export const clearStorage = () => {
   return localStorage.clear()
