@@ -15,8 +15,12 @@ export default function NeedsPassword({ onClose, onMnemonic }: NeedsPasswordProp
   const [disabled, setDisabled] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
   const [pass, setPass] = useState('')
+
+  useEffect(() => {
+    setTimeout(() => setOpen(true), 100)
+  }, [])
 
   const handleChange = (e: any) => {
     setPass(e.target.value)
@@ -50,10 +54,10 @@ export default function NeedsPassword({ onClose, onMnemonic }: NeedsPasswordProp
       {loading ? (
         <LoadingIcon small />
       ) : (
-        <div className='flex flex-col gap-2'>
+        <div className='flex flex-col gap-4'>
           <Error error={Boolean(error)} text={error} />
           <Input label='Insert password' onChange={handleChange} type='password' />
-          <Button label='Unlock' onClick={handleProceed} disabled={disabled} />
+          <Button label='Unlock' secondary onClick={handleProceed} disabled={disabled} />
         </div>
       )}
     </Modal>

@@ -110,13 +110,13 @@ export interface CoinsSelected {
   txfee: number
 }
 
-export const selectCoins = (amount: number, utxos: Utxo[]): CoinsSelected => {
+export const selectCoins = (amount: number, utxos: Utxo[], feeRate: number): CoinsSelected => {
   // find best coins combo to pay this amount
   let changeAmount = 0,
     coins = utxos,
     numAttempts = 10,
     sats = amount,
-    txfee = feeForCoins(utxos.length),
+    txfee = feeForCoins(utxos.length, 1, feeRate),
     value = 0
 
   const balance = coins.reduce((prev, curr) => prev + curr.value, 0)
@@ -126,7 +126,7 @@ export const selectCoins = (amount: number, utxos: Utxo[]): CoinsSelected => {
     sats = sats - changeAmount // changeAmount is negative or 0
     coins = sortAndSelect(sats, utxos)
     value = coins.reduce((prev, curr) => prev + curr.value, 0)
-    txfee = feeForCoins(coins.length)
+    txfee = feeForCoins(coins.length, changeAmount > 0 ? 2 : 1, feeRate)
     changeAmount = value - sats - txfee
     numAttempts -= 1
   } while (changeAmount < 0 && numAttempts > 0)

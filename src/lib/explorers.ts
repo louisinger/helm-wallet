@@ -31,7 +31,7 @@ const explorers: Explorer[] = [
   {
     name: ExplorerName.Mempool,
     [NetworkName.Mainnet]: {
-      restApiExplorerURL: 'https://mempool.space/api/v1/',
+      restApiExplorerURL: 'https://mempool.space/api/',
     },
   },
   {

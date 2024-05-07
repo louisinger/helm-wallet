@@ -7,6 +7,7 @@ import ButtonsOnBottom from '../../../components/ButtonsOnBottom'
 import Button from '../../../components/Button'
 import { WalletContext } from '../../../providers/wallet'
 import { getP2TRAddress, getSilentPaymentAddress } from '../../../lib/wallet'
+import QrCode from '../../../components/QrCode'
 
 enum AddressType {
   Silent,
@@ -22,6 +23,7 @@ export default function ReceiveSuccess() {
   const [type, setType] = useState<AddressType>(AddressType.Silent)
   const [address, setAddress] = useState(getSilentPaymentAddress(wallet))
   const [copied, setCopied] = useState(false)
+  const [showQR, setShowQR] = useState(false)
 
   const switchType = () => {
     setType(type === AddressType.Silent ? AddressType.Classic : AddressType.Silent)
@@ -49,16 +51,19 @@ export default function ReceiveSuccess() {
     <Container>
       <Content>
         <Title text='Receive' subtext={addressType()} />
-        <div className='flex flex-col h-32 mt-6'>
-          {/* <div className='m-auto' onClick={switchType}>
+        <div className='flex flex-col h-32 mt-6' onClick={() => setShowQR((v) => !v)}>
+          { showQR ?
+            <div className='m-auto'>
             <QrCode value={address} />
-          </div> */}
+          </div>
+          :
           <p
             className='text-sm text-gray-500 dark:text-gray-400 mt-2'
             style={{ maxWidth: '90vw', wordWrap: 'break-word' }}
           >
             {address}
           </p>
+          }
         </div>
       </Content>
       <ButtonsOnBottom>

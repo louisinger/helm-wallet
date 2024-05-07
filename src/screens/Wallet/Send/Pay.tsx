@@ -9,7 +9,6 @@ import Container from '../../../components/Container'
 import NeedsPassword from '../../../components/NeedsPassword'
 import { prettyNumber } from '../../../lib/format'
 import { WalletContext } from '../../../providers/wallet'
-import { inOneMinute, someSeconds } from '../../../lib/constants'
 import { sendSats } from '../../../lib/transactions'
 import Error from '../../../components/Error'
 import Loading from '../../../components/Loading'
@@ -21,7 +20,7 @@ import { getRestApiExplorerURL } from '../../../lib/explorers'
 export default function SendPayment() {
   const { navigate } = useContext(NavigationContext)
   const { sendInfo, setSendInfo } = useContext(FlowContext)
-  const { reloadWallet, wallet } = useContext(WalletContext)
+  const { wallet } = useContext(WalletContext)
 
   const [error, setError] = useState('')
 
@@ -39,8 +38,6 @@ export default function SendPayment() {
     const txid = await chainSrc.broadcast(txhex)
 
     setSendInfo({ ...sendInfo, txid })
-    setTimeout(reloadWallet, someSeconds)
-    setTimeout(reloadWallet, inOneMinute)
     navigate(Pages.SendSuccess)
   }
 
@@ -53,11 +50,11 @@ export default function SendPayment() {
     if (!mnemonic) return
 
     if (sendInfo.address && sendInfo.total && sendInfo.txFees) {
-      sendSats(sendInfo.total, sendInfo.address, sendInfo.txFees, wallet, mnemonic)
+      sendSats(sendInfo.total, sendInfo.address, wallet, mnemonic, sendInfo.txFees.rate)
         .then(onTx)
         .catch((e) => {
           console.error(e)
-          notify('error', extractError(e))
+          notify(extractError(e))
         })
     }
   }

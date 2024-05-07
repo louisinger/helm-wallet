@@ -9,6 +9,7 @@ import Container from '../../components/Container'
 import Content from '../../components/Content'
 import { WalletContext } from '../../providers/wallet'
 import Input from '../../components/Input'
+import Option from '../../components/Option'
 
 export default function Explorer() {
   const { toggleShowConfig } = useContext(ConfigContext)
@@ -39,7 +40,7 @@ export default function Explorer() {
         <Title text='Explorer' subtext='Choose your explorer' />
         <Select label='Explorer' onChange={handleChangeExplorer} value={explorer}>
           {getExplorerNames(wallet.network).map((e) => (
-            <option key={e}>{e}</option>
+            <Option key={e} value={e}>{e}</Option>
           ))}
         </Select>
         <br />

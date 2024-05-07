@@ -12,7 +12,7 @@ const TransactionLine = ({ data, wallet }: { data: Transaction; wallet: Wallet }
   const date = data.unixdate ? prettyAgo(data.unixdate) : 'just now'
   return (
     <div
-      className='border cursor-pointer p-2 flex justify-between w-full rounded-md'
+      className='border border-primary cursor-pointer p-2 flex justify-between w-full rounded-md'
       onClick={() => openInNewTab(data.txid, wallet)}
     >
       <p>{amount}</p>

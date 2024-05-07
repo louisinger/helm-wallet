@@ -1,5 +1,6 @@
 import { Encrypted, decrypt, encrypt } from './encryption'
 import { Config } from '../providers/config'
+import { useState } from 'react'
 
 export const clearStorage = () => {
   return localStorage.clear()
@@ -25,11 +26,13 @@ export const readMnemonicFromStorage = async (password: string): Promise<string 
 }
 
 export const useStorage = <T>(key: string, defaultValue: T): [T, (value: T) => void] => {
-  let value = JSON.parse(localStorage.getItem(key) ?? JSON.stringify(defaultValue))
+  const initial = JSON.parse(localStorage.getItem(key) ?? JSON.stringify(defaultValue))
+
+  const [value, setValue] = useState<T>(initial)
 
   const setStoredValue = (v: T) => {
     localStorage.setItem(key, JSON.stringify(v))
-    value = v
+    setValue(v)
   }
 
   return [value, setStoredValue]

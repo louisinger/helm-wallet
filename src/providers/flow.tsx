@@ -11,7 +11,7 @@ export type SendInfo = {
   address?: string
   total?: number
   satoshis?: number
-  txFees?: number
+  txFees?: { amount: number; rate: number }
   txid?: string
 }
 

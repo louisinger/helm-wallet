@@ -6,7 +6,7 @@ import { getNetwork } from './network'
 import { getCoinPrivKey, getSilentPaymentAddress } from './wallet'
 import * as silentpay from './silentpayment/core'
 
-export async function buildPsbt(coinSelection: CoinsSelected, fees: number, destinationAddress: string, wallet: Wallet, mnemonic: string) {
+export async function buildPsbt(coinSelection: CoinsSelected, destinationAddress: string, wallet: Wallet, mnemonic: string) {
   const network = getNetwork(wallet.network)
   const { amount, changeAmount, coins } = coinSelection
 
@@ -21,7 +21,7 @@ export async function buildPsbt(coinSelection: CoinsSelected, fees: number, dest
   } else {
     outputs.push({
       address: destinationAddress,
-      value: amount - fees,
+      value: amount,
     })
   }
 

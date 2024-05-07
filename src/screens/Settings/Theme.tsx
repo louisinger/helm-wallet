@@ -6,6 +6,7 @@ import { ConfigContext, Themes } from '../../providers/config'
 import Select from '../../components/Select'
 import Container from '../../components/Container'
 import Content from '../../components/Content'
+import Option from '../../components/Option'
 
 export default function Theme() {
   const { config, toggleShowConfig, updateConfig } = useContext(ConfigContext)
@@ -19,8 +20,8 @@ export default function Theme() {
       <Content>
         <Title text='Theme' subtext='Choose your theme' />
         <Select onChange={handleChange} value={config.theme}>
-          <option value={Themes.Dark}>{Themes.Dark}</option>
-          <option value={Themes.Light}>{Themes.Light}</option>
+          <Option value={Themes.Dark}>{Themes.Dark}</Option>
+          <Option value={Themes.Light}>{Themes.Light}</Option>
         </Select>
         <p className='mt-10'>Dark theme is easier on the eyes</p>
       </Content>

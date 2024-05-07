@@ -12,6 +12,7 @@ export interface ChainSource {
   getBlock(hash: string): Promise<Block>
   getBlockTime(hash: string): Promise<number>
   getChainTipHeight(): Promise<number>
+  getFeeRates(): Promise<{ fastest: number; halfHour: number; hour: number, day: number }>
 }
 
 export class EsploraChainSource implements ChainSource {
@@ -55,5 +56,18 @@ export class EsploraChainSource implements ChainSource {
   async getChainTipHeight(): Promise<number> {
     const resp = await this.axiosInstance.get<any, AxiosResponse<number>>('/blocks/tip/height')
     return resp.data
+  }
+
+  async getFeeRates(): Promise<{ fastest: number; halfHour: number; hour: number; day: number }> {
+    const resp = await this.axiosInstance.get<any, AxiosResponse<Record<string, string>>>(
+      '/fee-estimates'
+    )
+    
+    return {
+      fastest: parseFloat(resp.data['1']),
+      halfHour: parseFloat(resp.data['3']),
+      hour: parseFloat(resp.data['6']),
+      day: parseFloat(resp.data['144']),
+    }
   }
 }

@@ -7,6 +7,7 @@ import { getNetworkNames } from '../../lib/network'
 import Select from '../../components/Select'
 import Content from '../../components/Content'
 import { WalletContext } from '../../providers/wallet'
+import Option from '../../components/Option'
 
 export default function Network() {
   const { toggleShowConfig } = useContext(ConfigContext)
@@ -22,9 +23,9 @@ export default function Network() {
         <Title text='Network' subtext='Choose your network' />
         <Select onChange={handleChange} value={wallet.network}>
           {getNetworkNames().map(([value, label]) => (
-            <option key={value} value={value}>
+            <Option key={value} value={value}>
               {label}
-            </option>
+            </Option>
           ))}
         </Select>
         <p className='mt-10'>You can use Helm in testnet</p>

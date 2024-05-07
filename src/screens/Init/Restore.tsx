@@ -14,6 +14,7 @@ import Input from '../../components/Input'
 import Select from '../../components/Select'
 import { defaultNetwork } from '../../lib/constants'
 import { NetworkName } from '../../lib/network'
+import Option from '../../components/Option'
 
 enum ButtonLabel {
   Incomplete = 'Incomplete mnemonic',
@@ -94,9 +95,9 @@ export default function InitOld() {
         ) : (
           <div className='flex flex-col gap-2'>
             <Select label='Network' value={network} onChange={(e) => setNetwork(e.target.value)}>
-              <option value={NetworkName.Mainnet}>mainnet</option>
-              <option value={NetworkName.Testnet}>testnet</option>
-              <option value={NetworkName.Regtest}>regtest</option>
+              <Option value={NetworkName.Mainnet}>mainnet</Option>
+              <Option value={NetworkName.Testnet}>testnet</Option>
+              <Option value={NetworkName.Regtest}>regtest</Option>
             </Select>
             <Input label='Birth block height' onChange={handleBirthChange} type='number' />
           </div>

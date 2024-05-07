@@ -141,7 +141,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (e) {
       console.error(e)
-      notify('error', extractErrorMessage(e))
+      notify(extractErrorMessage(e))
     } finally {
       setReloading(false)
     }

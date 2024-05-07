@@ -5,6 +5,7 @@ import Title from '../../components/Title'
 import { ConfigContext } from '../../providers/config'
 import Select from '../../components/Select'
 import Content from '../../components/Content'
+import Option from '../../components/Option'
 
 export default function Notifications() {
   const { config, toggleShowConfig, updateConfig } = useContext(ConfigContext)
@@ -25,8 +26,8 @@ export default function Notifications() {
       <Content>
         <Title text='Notifications' subtext='Allow to receive notifications' />
         <Select onChange={handleChange} value={value}>
-          <option value='0'>Not allowed</option>
-          <option value='1'>Allowed</option>
+          <Option value='0'>Not allowed</Option>
+          <Option value='1'>Allowed</Option>
         </Select>
         <p className='mt-10'>Not implemented yet</p>
       </Content>

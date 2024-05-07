@@ -2,14 +2,14 @@ import Decimal from 'decimal.js'
 import { selectCoins } from './coinSelection'
 import { Wallet } from '../providers/wallet'
 
-export const satsVbyte = 0.11
+const vbyteSize = (numInputs: number, numOutputs: number) => numInputs * 57.5 + numOutputs * 43
 
-const vbyteSize = (numCoins: number) => 2418 + numCoins * 85
+export const feeForCoins = (numInputs: number, numOutputs: number, feeRate: number) => Decimal.ceil(Decimal.mul(vbyteSize(numInputs, numOutputs), feeRate)).toNumber()
 
-export const feeForCoins = (numCoins: number) => Decimal.ceil(Decimal.mul(vbyteSize(numCoins), satsVbyte)).toNumber()
-
-export const feesToSendSats = (sats: number, wallet: Wallet): number => {
+export const feesToSendSats = (sats: number, wallet: Wallet, feeRate: number): number => {
   if (sats === 0) return 0
-  const { coins } = selectCoins(sats, wallet.utxos[wallet.network])
-  return feeForCoins(coins.length)
+  console.log('rate', feeRate)
+  const { coins, changeAmount } = selectCoins(sats, wallet.utxos[wallet.network], feeRate)
+
+  return feeForCoins(coins.length, changeAmount > 0 ? 2 : 1, feeRate)
 }
